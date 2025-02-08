@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Welcome to the Blog App</h1>
+<p>This is the home page for our Blog Application. Use the links below to navigate:</p>
+<ul>
+    {% for link in links %}
+    <li><a href="{{ link.url }}">{{ link.name }}</a></li>
+    {% endfor %}
+</ul>
+{% endblock %}

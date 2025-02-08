@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- Load CSS -->
+<link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}">
+
+<ul>
+    <h1>{{ blog.title }}</h1>
+    <p>{{ blog.content | safe}}</p>
+    <!-- {% if blog.image %}
+        <img src="{{ blog.image }}" alt="Blog Image" width="300">
+    {% endif %} -->
+    {% if blog.images %}
+        {% for image in blog.images %}
+            <img src="{{ url_for('static', path=image.image_path.replace('static/', '')) }}" alt="Blog Image" width="300">
+            <!-- <img src="{{ blog.image }}" alt="Blog Image" width="300"> -->
+        {% endfor %}
+    {% else %}
+        <p>No Images Available</p>
+    {% endif %}
+    {% if current_user.id == blog.user_id %}
+            <!-- <a href="/blogs/edit/{{ blog.id }}" class="edit-btn">Edit</a> -->
+            <form action="/blogs/delete/{{ blog.id }}" method="post">
+                <button type="submit" class="delete-btn">Delete</button>
+            </form>            
+    {% endif %}
+    <h2>Comments</h2>
+    {% for comment in comments %}
+        <p>{{ comment.content }}</p>
+    {% endfor %}
+    <form method="post" action="/comments/{{ blog.id }}">
+        <label>Add Comment:</label>
+        <textarea name="content"></textarea>
+        <button type="submit">Comment</button>
+    </form>
+    
+</ul>
+
+{% endblock %}

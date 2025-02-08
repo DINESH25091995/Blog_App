@@ -1,0 +1,215 @@
+.carousel-wrapper {
+    display: flex;
+    flex-direction: column;  /* Ensures images are directly below content */
+    align-items: flex-start; /* Aligns to the left */
+    width: 100%;
+    margin-top: 10px;
+    position: relative; /* Ensures buttons are positioned correctly */
+}
+
+.carousel-container {
+    position: relative;
+    width: 100%;
+    max-width: 300px;
+    overflow: hidden;
+    border: 1px solid #ddd; /* Optional: adds a border around images */
+}
+
+.carousel {
+    display: flex;
+    transition: transform 0.5s ease-in-out;
+    width: 100%;
+}
+
+.carousel-image {
+    width: 100%;
+    border-radius: 15px; /* Ensures rounded corners */
+    display: block;
+}
+
+.prev, .next {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    font-size: 18px;
+    z-index: 10; /* Ensures buttons appear above images */
+    opacity: 0.8; /* Slight transparency for a better look */
+}
+
+.prev:hover, .next:hover {
+    opacity: 1; /* Fully visible when hovered */
+}
+
+.prev { left: 10px; }
+.next { right: 10px; }
+
+
+/* Container to align blogs on the left */
+.blog-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /*Aligns all blogs to the left */
+    width: 100%;
+    padding: 20px;
+}
+
+/* Blog Card Styling */
+.blog-card {
+    background-color: #ffffff; /* White background */
+    border-radius: 15px; /* Rounded corners */
+    padding: 20px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* Soft shadow effect */
+    margin-bottom: 20px;
+    width: 25%; /* Takes one-third of the page width */
+    min-width: 300px; /* Minimum width for responsiveness */
+    text-align: left;
+    overflow: hidden;
+}
+
+/* Blog Title */
+.blog-card h2 {
+    margin-top: 0;
+    font-size: 22px;
+    color: #333;
+}
+
+/* Blog Content */
+.blog-card p {
+    font-size: 16px;
+    color: #555;
+}
+
+/* Blog Images */
+.blog-card img {
+    width: 100%;
+    border-radius: 15px; /* Makes image corners rounded */
+    /* margin-top: 10px; */
+    display: block; /* Ensures no extra spacing issues */
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .blog-card {
+        width: 100%; /* Full width on smaller screens */
+    }
+}
+
+
+.edit-btn, .delete-btn {
+    padding: 8px 12px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 14px;
+    margin-right: 5px;
+    cursor: pointer;
+}
+
+.edit-btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+}
+
+.delete-btn {
+    background-color: #ff4d4d;
+    color: white;
+    border: none;
+}
+
+
+/* CSS for Login Button */
+/* CSS for Register Button as well */
+.login-btn {
+    background-color: #409ce7; /* Your color */
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    width: 8%;
+}
+
+.login-btn:hover {
+    background-color: #8bcd49; /* Slightly darker green */
+}
+
+/* Style the labels */
+.input-label {
+    color: #007bff; /* Blue color */
+    font-weight: bold;
+    display: block; /* Place labels above input */
+    margin-bottom: 5px;
+}
+
+/* Style the input fields */
+input {
+    width: 15%;
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+
+
+/* CSS for create blog form */
+/* Blog Container */
+/* .blog-container {
+    width: 75%;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+} */
+
+
+/* Form Styling */
+.blog-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Input Fields */
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+input[type="text"],
+input[type="file"] {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+/* Quill Editor */
+#editor {
+    height: 200px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background: #fff;
+}
+
+/* Submit Button */
+.btn-primary {
+    width: 20%;
+    padding: 10px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.btn-primary:hover {
+    background: #0056b3;
+}
+

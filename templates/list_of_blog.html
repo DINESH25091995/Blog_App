@@ -1,0 +1,38 @@
+<!-- Load CSS -->
+<link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}">
+
+<!-- Load JavaScript -->
+<script src="{{ url_for('static', path='js/carousel.js') }}"></script>
+
+
+    <div class="blog-container">
+        {% for blog in blogs %}
+            <div class="blog-card">
+                <h2><a href="/blogs/{{ blog.id }}">{{ blog.title }}</a></h2>
+                <!-- <p>{{ blog.content }}</p> -->
+                <p>{{ blog.content | striptags | truncate(60, True) }}
+                    {% if blog.content | striptags | length > 60 %}
+                        <a href="/blogs/{{ blog.id }}">read more</a>
+                    {% endif %}
+                </p>
+    
+                {% if blog.images %}
+                    <div class="carousel-wrapper">
+                        <div class="carousel-container">
+                            <button class="prev" onclick="prevSlide('carousel-{{ blog.id }}')">&#10094;</button>
+                            <div class="carousel" id="carousel-{{ blog.id }}">
+                                {% for image in blog.images %}
+                                    <img class="carousel-image" src="{{ url_for('static', path=image.image_path.replace('static/', '')) }}" alt="Blog Image">
+                                {% endfor %}
+                            </div>
+                            <button class="next" onclick="nextSlide('carousel-{{ blog.id }}')">&#10095;</button>
+                        </div>
+                    </div>
+                {% else %}
+                    
+                    <h2><a href="/blogs/{{ blog.id }}"><p>No Images Available</p></a></h2>
+                {% endif %}
+            </div> <!-- End of blog-card -->
+        {% endfor %}
+    </div>
+    

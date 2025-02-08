@@ -1,0 +1,19 @@
+myenv\Scripts\activate
+
+uvicorn main:app --reload
+
+uvicorn main:app --reload --log-level debug
+
+
+
+pip install python-multipart itsdangerous
+
+pip install --upgrade bcrypt
+pip install --upgrade passlib
+pip show bcrypt
+pip show passlib
+pip install fastapi-sessions
+
+
+
+

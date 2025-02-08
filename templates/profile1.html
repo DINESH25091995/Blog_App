@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+<ul>
+    <h1>Welcome, {{ user.username }}</h1>
+    <p>What would you like to do?</p>
+</ul>
+<ul>
+    <ul>
+        <li><a href="/blogs/">View Blogs</a></li>
+        <li><a href="/blogs/create">Create Blog</a></li>
+    </ul>
+    
+    <!-- <li><a href="/auth/logout">Logout</a></li> -->
+    <li><h2>List of blogs Created by {{ user.username }}</h2></li>
+    <ol>
+        {% for blog in blogs %}
+        <li><h3><a href="/blogs/{{ blog.id }}">{{ blog.title }}</a></h3></li>
+        <p>{{ blog.content | safe}}</p>
+            {% if blog.images %}
+                {% for image in blog.images %}
+                <img src="{{ url_for('static', path=image.image_path.replace('static/', '')) }}" alt="Blog Image" width="300">
+                <!-- <img src="{{ blog.image }}" alt="Blog Image" width="300"> -->
+                {% endfor %}
+            {% else %}
+                <p>No Images Available</p>
+            {% endif %}
+        {% endfor %}
+    </ol>
+</ul>
+{% endblock %}

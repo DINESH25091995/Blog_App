@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- Load CSS -->
+<link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}">
+
+<!-- <h1>Create a Blog</h1> intial html page
+<form method="post" action="/blogs/create" enctype="multipart/form-data">
+    <label>Title:</label>
+        <input type="text" name="title">
+    <label>Content:</label>
+        <textarea name="content"></textarea>
+    <label>Upload Image:</label>
+        <input type="file" name="images" accept="image/*" multiple>
+    <button type="submit">Create</button>
+</form> -->
+
+
+<ul>
+    <h1>Create a Blog</h1> optimized code with button
+    <form method="post" action="/blogs/create" enctype="multipart/form-data">
+        <div style="margin-bottom: 10px;">
+            <label>Title :</label>
+            <input type="text" name="title">
+        </div>
+        <div style="margin-bottom: 10px;">
+            <label>Content :</label>
+            <textarea name="content"></textarea>
+        </div>
+        <div style="margin-bottom: 10px;">
+            <label>Upload Image:</label>
+            <input type="file" name="images" accept="image/*" multiple>
+        </div>
+        <button type="submit" class="login-btn">Create</button>
+    </form>
+</ul>
+{% endblock %}

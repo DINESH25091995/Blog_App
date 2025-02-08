@@ -1,0 +1,18 @@
+fastapi
+uvicorn
+SQLAlchemy
+jinja2
+alembic
+passlib[bcrypt]
+python-jose
+pydantic
+# email-validator
+# python-multipart
+fastapi[all]
+uvicorn
+sqlalchemy
+pydantic
+jinja2
+python-dotenv
+passlib
+

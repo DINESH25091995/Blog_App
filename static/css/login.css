@@ -1,0 +1,33 @@
+/* CSS for Login Button */
+/* CSS for Register Button as well */
+.login-btn {
+    background-color: #409ce7; /* Your color */
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    width: 8%;
+}
+
+.login-btn:hover {
+    background-color: #8bcd49; /* Slightly darker green */
+}
+
+/* Style the labels */
+.input-label {
+    color: #007bff; /* Blue color */
+    font-weight: bold;
+    display: block; /* Place labels above input */
+    margin-bottom: 5px;
+}
+
+/* Style the input fields */
+input {
+    width: 15%;
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
