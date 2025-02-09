@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- Load CSS -->
+<link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}">
+
+<ul>
+    <h1>Create a Blog</h1> 
+    <form method="post" action="/shops/create" enctype="multipart/form-data">
+        <div style="margin-bottom: 10px;">
+            <label>Shop name :</label>
+            <input type="text" name="shop_name">
+        </div>
+        <div style="margin-bottom: 10px;">
+            <label>Address :</label>
+            <input type="text" name="address">
+        </div>
+        <!-- Upload Image -->
+        <div class="form-group">
+            <label for="images">Upload Image:</label>
+            <input type="file" name="images" id="images" accept="image/*" multiple>
+        </div>
+        <button type="submit" class="login-btn">Create Shop</button>
+    </form>
+</ul>
+{% endblock %}

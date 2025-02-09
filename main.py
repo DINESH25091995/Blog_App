@@ -1,13 +1,13 @@
 from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-from routers import auth, blog, comment
+from routers import auth, blog, comment, shop
 from database import Base, engine
 
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Form, Request, Depends
 from database import get_db
-from models import Blog
+from models import Blog, Shop
 from starlette.middleware.sessions import SessionMiddleware
 # from fastapi_sessions.middleware import SessionMiddleware
 
@@ -26,6 +26,10 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 app.include_router(blog.router, prefix="/blogs", tags=["Blogs"])
 app.include_router(comment.router, prefix="/comments", tags=["Comments"])
+app.include_router(shop.router, prefix="/shops", tags=["Shops"])
+# ✅ Ensure the shop router is included with the correct prefix
+# app.include_router(shop.router, prefix="/shops", tags=["Shops"])
+
 
 # Template engine
 templates = Jinja2Templates(directory="templates")
@@ -45,5 +49,6 @@ templates = Jinja2Templates(directory="templates")
 @app.get("/")
 def home(request: Request, db: Session = Depends(get_db)):
     blogs = db.query(Blog).all()
-    return templates.TemplateResponse("index.html", {"request": request, "blogs": blogs})
+    shops = db.query(Shop).all()
+    return templates.TemplateResponse("index.html", {"request": request, "blogs": blogs,"shops":shops})
 

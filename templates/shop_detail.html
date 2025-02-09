@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- Load CSS -->
+<link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}">
+
+<ul>
+    <h1>{{ shop.shop_name }}</h1>
+    <p>{{ shop.address | safe}}</p>
+    {% if current_user.id == shop.user_id %}
+            <form action="/shops/delete/{{ shop.id }}" method="post">
+                <button type="submit" class="delete-btn">Delete</button>
+            </form>            
+    {% endif %}
+    
+</ul>
+
+{% endblock %}

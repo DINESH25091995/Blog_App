@@ -1,0 +1,83 @@
+from fastapi import APIRouter, Form, Request, Depends, UploadFile, File
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import RedirectResponse
+from sqlalchemy.orm import Session
+from models import Blog,BlogImage,Shop, ShopImage
+from database import get_db
+import os
+import shutil
+
+from routers.auth import get_current_user
+
+router = APIRouter()
+templates = Jinja2Templates(directory="templates")
+
+SHOP_DIR = "static/uploads/shopprofile"
+os.makedirs(SHOP_DIR, exist_ok=True)  # Create directory if not exists
+
+@router.get("/")
+def list_blogs(request: Request, db: Session = Depends(get_db)):
+    shops = db.query(Shop).all()
+    user = request.session.get("user")
+    return templates.TemplateResponse("shops.html", {"request": request, "shops": shops})
+
+@router.get("/create")
+def create_blog_form(request: Request):
+    user = request.session.get("user")  # Check if user is logged in
+    if not user:
+        return RedirectResponse(url="/auth/login", status_code=303)  # Redirect to login page
+    
+    return templates.TemplateResponse("create_shop.html", {"request": request, "user": user})
+
+
+@router.post("/create")
+async def create_shop(request: Request,
+    shop_name: str = Form(...), 
+    address: str = Form(...),
+    images: list[UploadFile] = File(...), 
+    db: Session = Depends(get_db)):
+
+    user = get_current_user(request)
+    shop = Shop(shop_name=shop_name, address=address,user_id=user["id"])
+    db.add(shop)
+    db.commit()
+    db.refresh(shop)
+
+    if images:
+        for image in images:
+            if image.filename:
+                images_path = f"static/uploads/shopprofile/{shop.shop_name}_{shop.id}"
+                os.makedirs(images_path, exist_ok=True)  # Create directory if not exists
+
+                file_path = os.path.join(images_path, image.filename)
+                with open(file_path, "wb") as buffer:
+                    buffer.write(await image.read())
+
+                # Save image reference in the database
+                shop_image = ShopImage(shop_id=shop.id, image_path=file_path)
+                db.add(shop_image)
+
+        db.commit()
+    return RedirectResponse(url="/shops/", status_code=303)
+
+@router.get("/{shop_id}")
+def shop_detail(request: Request, shop_id: int, db: Session = Depends(get_db)):
+    shop = db.query(Shop).filter(Shop.id == shop_id).first()
+    user = request.session.get("user")
+    return templates.TemplateResponse("shop_detail.html", {"request": request, "shop": shop, "current_user": user})
+
+
+@router.post("/delete/{shop_id}")
+def delete_blog(shop_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    shop = db.query(Shop).filter(Shop.id == shop_id).first()
+
+    if not shop:
+        raise HTTPException(status_code=404, detail="Blog not found")
+
+    if shop.user_id != user["id"]:
+        raise HTTPException(status_code=403, detail="You are not allowed to delete this blog")
+
+    db.delete(shop)
+    db.commit()
+
+    return RedirectResponse(url="/shops", status_code=303)

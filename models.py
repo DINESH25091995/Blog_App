@@ -33,3 +33,27 @@ class Comment(Base):
     content = Column(Text)
     blog = relationship("Blog", back_populates="comments")
     user_id = Column(Integer, ForeignKey("users.id"))
+
+class Shop(Base):
+    __tablename__ = "shops"
+    id = Column(Integer, primary_key=True, index=True)
+    shop_name = Column(String)
+    address = Column(String)
+    # pin = Column(Integer)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    images = relationship("ShopImage", back_populates="shop", cascade="all, delete-orphan")
+
+class ShopImage(Base):
+    __tablename__ = "shop_images"
+    id = Column(Integer, primary_key=True, index=True)
+    shop_id = Column(Integer, ForeignKey("shops.id"))
+    image_path = Column(String, nullable=False)
+    shop = relationship("Shop", back_populates="images")
+
+
+# class Appointment(Base):
+#     __tablename__ = "appointments"
+#     id = Column(Integer, primary_key=True, index=True)
+#     appointment_id = Column(Integer, ForeignKey("shops.id"))
+#     shop = relationship("Shop", back_populates="appointments")
+#     user_id = Column(Integer, ForeignKey("users.id"))

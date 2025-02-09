@@ -1,10 +1,22 @@
 {% extends "base.html" %}
 {% block content %}
+<!-- Load CSS -->
+<link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}">
 
-<ul>
-    <h1>Blogs</h1>
-    {% include "list_of_blog.html" %}
-</ul>
-    
+<!-- Wrapper to align blogs and shops side by side -->
+<div class="content-wrapper">
+    <div class="content-column">
+        <h2>Shops</h2>
+        {% include "list_of_shops.html" %}
+    </div>
+    <div class="content-column">
+        <h2>Blogs</h2>
+        {% include "list_of_blog.html" %}
+    </div>
+    <div class="content-column">
+        <h2>Trends</h2>
+       
+    </div>
+</div>
 
 {% endblock %}

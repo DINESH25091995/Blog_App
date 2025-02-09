@@ -19,7 +19,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)  # Create directory if not exists
 def list_blogs(request: Request, db: Session = Depends(get_db)):
     blogs = db.query(Blog).all()
     user = request.session.get("user")
-    return templates.TemplateResponse("index.html", {"request": request, "blogs": blogs})
+    return templates.TemplateResponse("blogs.html", {"request": request, "blogs": blogs})
 
 @router.get("/create")
 def create_blog_form(request: Request):
