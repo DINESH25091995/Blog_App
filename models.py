@@ -42,6 +42,7 @@ class Shop(Base):
     # pin = Column(Integer)
     user_id = Column(Integer, ForeignKey("users.id"))
     images = relationship("ShopImage", back_populates="shop", cascade="all, delete-orphan")
+    workers = relationship("Worker", back_populates="shop", cascade="all, delete-orphan")
 
 class ShopImage(Base):
     __tablename__ = "shop_images"
@@ -51,9 +52,26 @@ class ShopImage(Base):
     shop = relationship("Shop", back_populates="images")
 
 
-# class Appointment(Base):
-#     __tablename__ = "appointments"
-#     id = Column(Integer, primary_key=True, index=True)
-#     appointment_id = Column(Integer, ForeignKey("shops.id"))
-#     shop = relationship("Shop", back_populates="appointments")
-#     user_id = Column(Integer, ForeignKey("users.id"))
+class Worker(Base):
+    __tablename__ = "workers"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    shop_id = Column(Integer, ForeignKey("shops.id"))
+    
+    user = relationship("User", backref="worker_shops")
+    shop = relationship("Shop", back_populates="workers")
+
+
+
+class Appointment(Base):
+    __tablename__ = "appointments"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    worker_id = Column(Integer, ForeignKey("workers.id"))
+    shop_id = Column(Integer, ForeignKey("shops.id"))
+    date = Column(String)
+    time = Column(String)
+
+    user = relationship("User", backref="appointments")
+    worker = relationship("Worker", backref="appointments")
+    shop = relationship("Shop", backref="appointments")

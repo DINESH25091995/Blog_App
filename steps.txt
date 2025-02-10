@@ -13,6 +13,8 @@ pip install --upgrade passlib
 pip show bcrypt
 pip show passlib
 pip install fastapi-sessions
+pip install psycopg2-binary
+
 
 
 

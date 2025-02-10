@@ -4,13 +4,48 @@
 <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}">
 
 <ul>
-    <h1>{{ shop.shop_name }}</h1>
-    <p>{{ shop.address | safe}}</p>
-    {% if current_user.id == shop.user_id %}
-            <form action="/shops/delete/{{ shop.id }}" method="post">
-                <button type="submit" class="delete-btn">Delete</button>
-            </form>            
-    {% endif %}
+    
+<h2>Book an Appointment</h2>
+<form method="post" action="/shops/{{ shop.id }}/book_appointment">
+    <label for="worker">Select Worker:</label>
+    <select name="worker_id">
+        {% for worker in shop.workers %}
+            <option value="{{ worker.id }}">{{ worker.user.username }}</option>
+        {% endfor %}
+    </select>
+    
+    <label for="date">Select Date:</label>
+    <input type="date" name="date" required>
+    
+    <label for="time">Select Time:</label>
+    <input type="time" name="time" required>
+    
+    <button type="submit">Book Appointment</button>
+</form>
+
+
+{% if current_user and current_user.id == shop.user_id %}
+    <h2>Add Worker</h2>
+    {% if request.session.get("worker_error") %}
+            <p style="color: red;">{{ request.session.pop("worker_error") }}</p>
+        {% endif %}
+    <form method="post" action="/shops/{{ shop.id }}/add_worker">
+        <label for="worker">Select Worker:</label>
+        <select name="user_id">
+            {% for user in users %}
+                <option value="{{ user.id }}">{{ user.username }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit">Add Worker</button>
+    </form>
+{% endif %}
+
+<h2>Workers</h2>
+<ul>
+    {% for worker in shop.workers %}
+        <li>{{ worker.user.username }}</li>
+    {% endfor %}
+</ul>
     
 </ul>
 

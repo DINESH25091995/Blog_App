@@ -12,7 +12,11 @@
         <li><a href="/shops/">View Shops</a></li>
         <li><a href="/shops/create">Create Shop</a></li>
     </ul>
-    
+    <h2>list of appointments</h2>
+    {% for appointment in appointments %}
+        <h2><a href="/blogs/{{ appointment.id }}">{{ appointment.date }}, {{appointment.time}}</a></h2>
+       
+    {% endfor %}
     <!-- <li><a href="/auth/logout">Logout</a></li> -->
     <h2>List of blogs Created by {{ user.username }}</h2>
     

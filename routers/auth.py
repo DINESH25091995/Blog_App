@@ -3,7 +3,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
-from models import User,Blog
+from models import User,Blog, Appointment
 from database import get_db
 
 templates = Jinja2Templates(directory="templates")
@@ -49,7 +49,8 @@ def logout(request: Request):
 def profile(request: Request, db: Session = Depends(get_db)):
     user = get_current_user(request)
     blogs = db.query(Blog).filter(Blog.user_id == user["id"]).all()
-    return templates.TemplateResponse("profile.html", {"request": request, "user": user, "blogs":blogs})
+    appointments = db.query(Appointment).filter(Appointment.user_id == user["id"]).all()
+    return templates.TemplateResponse("profile.html", {"request": request, "user": user, "blogs":blogs,"appointments":appointments})
 
 def get_current_user(request: Request):
     user = request.session.get("user")
