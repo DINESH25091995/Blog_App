@@ -2,10 +2,11 @@ from fastapi import APIRouter, Form, Request, Depends, UploadFile, File
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
-from models import Blog,BlogImage,Shop, ShopImage, Appointment,User,Worker
+from models import Blog,BlogImage,Shop, ShopImage, Appointment, User, Worker, Service
 from database import get_db
 import os
 import shutil
+from typing import List
 
 from routers.auth import get_current_user
 
@@ -65,7 +66,11 @@ def shop_detail(request: Request, shop_id: int, db: Session = Depends(get_db)):
     shop = db.query(Shop).filter(Shop.id == shop_id).first()
     users = db.query(User).all()  # Fetch all users for the dropdown
     user = request.session.get("user")
-    return templates.TemplateResponse("shop_detail.html", {"request": request, "shop": shop, "current_user": user, "users": users})
+    
+    appointments = db.query(Appointment).filter(Appointment.shop_id == shop_id).all()
+
+    # appointments = db.query(Appointment).filter(Appointment.user_id == user["id"]).all()
+    return templates.TemplateResponse("shop_detail.html", {"request": request, "shop": shop, "current_user": user, "users": users,"appointments":appointments})
 
 
 @router.post("/delete/{shop_id}")
@@ -90,7 +95,12 @@ def list_users(request: Request, db: Session = Depends(get_db)):
     return templates.TemplateResponse("user_list.html", {"request": request, "users": users})
 
 @router.post("/{shop_id}/add_worker")
-def add_worker(request: Request, shop_id: int, user_id: int = Form(...), db: Session = Depends(get_db), owner=Depends(get_current_user)):
+def add_worker(request: Request, 
+                shop_id: int, 
+                user_id: int = Form(...),
+                service_ids: List[int] = Form(...),  # Accept multiple services 
+                db: Session = Depends(get_db), 
+                owner=Depends(get_current_user)):
     shop = db.query(Shop).filter(Shop.id == shop_id).first()
 
     if not shop:
@@ -106,7 +116,12 @@ def add_worker(request: Request, shop_id: int, user_id: int = Form(...), db: Ses
         return RedirectResponse(url=f"/shops/{shop_id}", status_code=303)
         # raise HTTPException(status_code=400, detail="User is already a worker")
 
+    # Create new Worker
     worker = Worker(user_id=user_id, shop_id=shop_id)
+    # Assign Selected Services to Worker
+    selected_services = db.query(Service).filter(Service.id.in_(service_ids)).all()
+    worker.services.extend(selected_services)
+
     db.add(worker)
     db.commit()
 
@@ -118,4 +133,112 @@ def book_appointment(shop_id: int, worker_id: int = Form(...), date: str = Form(
     appointment = Appointment(user_id=user["id"], worker_id=worker_id, shop_id=shop_id, date=date, time=time)
     db.add(appointment)
     db.commit()
+    return RedirectResponse(url=f"/shops/{shop_id}", status_code=303)
+
+
+@router.post("/{shop_id}/add_service")
+def add_service(shop_id: int, 
+                service_name: str = Form(...), 
+                db: Session = Depends(get_db), 
+                owner=Depends(get_current_user)):
+    shop = db.query(Shop).filter(Shop.id == shop_id).first()
+
+    if not shop:
+        raise HTTPException(status_code=404, detail="Shop not found")
+    
+    if shop.user_id != owner["id"]:
+        raise HTTPException(status_code=403, detail="You are not allowed to add services")
+
+    new_service = Service(name=service_name, shop_id=shop_id)
+    db.add(new_service)
+    db.commit()
+
+    return RedirectResponse(url=f"/shops/{shop_id}", status_code=303)
+
+
+@router.post("/{shop_id}/remove_worker")
+def remove_worker(
+    shop_id: int,
+    worker_id: int = Form(...),
+    db: Session = Depends(get_db),
+    owner=Depends(get_current_user)
+):
+    shop = db.query(Shop).filter(Shop.id == shop_id).first()
+    if not shop:
+        raise HTTPException(status_code=404, detail="Shop not found")
+
+    if shop.user_id != owner["id"]:
+        raise HTTPException(status_code=403, detail="You are not allowed to remove workers")
+
+    worker = db.query(Worker).filter(Worker.id == worker_id, Worker.shop_id == shop_id).first()
+    if not worker:
+        raise HTTPException(status_code=404, detail="Worker not found")
+
+    db.delete(worker)
+    db.commit()
+
+    return RedirectResponse(url=f"/shops/{shop_id}", status_code=303)
+
+
+@router.post("/{shop_id}/add_worker_service")
+def add_worker_service(
+    shop_id: int,
+    worker_id: int = Form(...),
+    service_id: int = Form(...),
+    db: Session = Depends(get_db),
+    owner=Depends(get_current_user)
+):
+    shop = db.query(Shop).filter(Shop.id == shop_id).first()
+    if not shop:
+        raise HTTPException(status_code=404, detail="Shop not found")
+
+    if shop.user_id != owner["id"]:
+        raise HTTPException(status_code=403, detail="You are not allowed to modify workers")
+
+    worker = db.query(Worker).filter(Worker.id == worker_id, Worker.shop_id == shop_id).first()
+    if not worker:
+        raise HTTPException(status_code=404, detail="Worker not found")
+
+    service = db.query(Service).filter(Service.id == service_id, Service.shop_id == shop_id).first()
+    if not service:
+        raise HTTPException(status_code=404, detail="Service not found")
+
+    if service in worker.services:
+        raise HTTPException(status_code=400, detail="Service already assigned to this worker")
+
+    worker.services.append(service)
+    db.commit()
+
+    return RedirectResponse(url=f"/shops/{shop_id}", status_code=303)
+
+
+@router.post("/{shop_id}/remove_worker_service")
+def remove_worker_service(
+    shop_id: int,
+    worker_id: int = Form(...),
+    service_id: int = Form(...),
+    db: Session = Depends(get_db),
+    owner=Depends(get_current_user)
+):
+    shop = db.query(Shop).filter(Shop.id == shop_id).first()
+    if not shop:
+        raise HTTPException(status_code=404, detail="Shop not found")
+
+    if shop.user_id != owner["id"]:
+        raise HTTPException(status_code=403, detail="You are not allowed to modify workers")
+
+    worker = db.query(Worker).filter(Worker.id == worker_id, Worker.shop_id == shop_id).first()
+    if not worker:
+        raise HTTPException(status_code=404, detail="Worker not found")
+
+    service = db.query(Service).filter(Service.id == service_id, Service.shop_id == shop_id).first()
+    if not service:
+        raise HTTPException(status_code=404, detail="Service not found")
+
+    if service not in worker.services:
+        raise HTTPException(status_code=400, detail="Service not assigned to this worker")
+
+    worker.services.remove(service)
+    db.commit()
+
     return RedirectResponse(url=f"/shops/{shop_id}", status_code=303)

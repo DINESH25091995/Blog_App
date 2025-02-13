@@ -1,0 +1,26 @@
+<!-- For Booking Appointment -->
+<h2>Book an Appointment</h2>
+<ul>
+    <form method="post" action="/shops/{{ shop.id }}/book_appointment">
+        <div style="margin-bottom: 10px;">
+            <label for="worker">Select Worker:</label>
+            <select name="worker_id">
+                {% for worker in shop.workers %}
+                    <option value="{{ worker.id }}">{{ worker.user.username }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div style="margin-bottom: 10px;">
+            <label for="date">Select Date:</label>
+            <input type="date" name="date" required>
+        </div>
+            
+        <div>
+            <label for="time">Select Time:</label>
+            <input type="time" name="time" required>
+        </div>
+        
+        <button type="submit">Book Appointment</button>
+    </form>
+</ul>

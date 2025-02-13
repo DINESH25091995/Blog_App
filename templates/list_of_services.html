@@ -1,0 +1,11 @@
+
+    <!-- For list of Services -->
+    <h2>🛠️ List of Services</h2>
+    <div class="grid-container">
+        {% for service in shop.services %}
+            <div class="card">
+                <h3>✅ {{ service.name }}</h3>
+            </div>
+        {% endfor %}
+    </div>
+

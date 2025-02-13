@@ -1,6 +1,14 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, ForeignKey, Text,Table
 from sqlalchemy.orm import relationship
 from database import Base
+
+# Many-to-Many Relationship Table
+worker_services = Table(
+    "worker_services",
+    Base.metadata,
+    Column("worker_id", Integer, ForeignKey("workers.id"), primary_key=True),
+    Column("service_id", Integer, ForeignKey("services.id"), primary_key=True),
+)
 
 class User(Base):
     __tablename__ = "users"
@@ -43,6 +51,7 @@ class Shop(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     images = relationship("ShopImage", back_populates="shop", cascade="all, delete-orphan")
     workers = relationship("Worker", back_populates="shop", cascade="all, delete-orphan")
+    services = relationship("Service", back_populates="shop", cascade="all, delete-orphan")
 
 class ShopImage(Base):
     __tablename__ = "shop_images"
@@ -60,7 +69,17 @@ class Worker(Base):
     
     user = relationship("User", backref="worker_shops")
     shop = relationship("Shop", back_populates="workers")
+    # Many-to-Many Relationship with Services
+    services = relationship("Service", secondary=worker_services, back_populates="workers")
 
+class Service(Base):
+    __tablename__ = "services"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String)
+
+    shop_id = Column(Integer, ForeignKey("shops.id"))
+    shop = relationship("Shop", back_populates="services")
+    workers = relationship("Worker", secondary=worker_services, back_populates="services")
 
 
 class Appointment(Base):

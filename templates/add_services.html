@@ -1,0 +1,10 @@
+
+    <!-- To add list of Services -->
+    {% if current_user and current_user.id == shop.user_id %}
+        <h2>Add Service</h2>
+        <form method="post" action="/shops/{{ shop.id }}/add_service">
+            <label for="service_name">Service Name:</label>
+            <input type="text" name="service_name" required>
+            <button type="submit">Add Service</button>
+        </form>
+    {% endif %}

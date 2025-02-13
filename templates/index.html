@@ -1,22 +1,26 @@
 {% extends "base.html" %}
+
 {% block content %}
 <!-- Load CSS -->
-<link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', path='css/styles_index.css') }}">
 
-<!-- Wrapper to align blogs and shops side by side -->
 <div class="content-wrapper">
+    <!-- Shops Section -->
     <div class="content-column">
-        <h2>Shops</h2>
+        <h2>🏪 Shops</h2>
         {% include "list_of_shops.html" %}
     </div>
+
+    <!-- Blogs Section -->
     <div class="content-column">
-        <h2>Blogs</h2>
+        <h2>📝 Blogs</h2>
         {% include "list_of_blog.html" %}
     </div>
+
+    <!-- Trends Section -->
     <div class="content-column">
-        <h2>Trends</h2>
-       
+        <h2>📈 Trends</h2>
+        <p>Check out the latest trends in shops and blogs.</p>
     </div>
 </div>
-
 {% endblock %}

@@ -2,51 +2,77 @@
 {% block content %}
 <!-- Load CSS -->
 <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}">
-
-<ul>
-    
-<h2>Book an Appointment</h2>
-<form method="post" action="/shops/{{ shop.id }}/book_appointment">
-    <label for="worker">Select Worker:</label>
-    <select name="worker_id">
-        {% for worker in shop.workers %}
-            <option value="{{ worker.id }}">{{ worker.user.username }}</option>
-        {% endfor %}
-    </select>
-    
-    <label for="date">Select Date:</label>
-    <input type="date" name="date" required>
-    
-    <label for="time">Select Time:</label>
-    <input type="time" name="time" required>
-    
-    <button type="submit">Book Appointment</button>
-</form>
+<link rel="stylesheet" href="{{ url_for('static', path='css/styles_shop_details.css') }}">
 
 
-{% if current_user and current_user.id == shop.user_id %}
-    <h2>Add Worker</h2>
-    {% if request.session.get("worker_error") %}
-            <p style="color: red;">{{ request.session.pop("worker_error") }}</p>
+<div class="main-container">
+    
+    <!-- Left Side Navigation -->
+    <div class="sidebar">
+        <button onclick="showSection('list_of_appointments')" class="nav-btn">📅 List of Appointments</button>
+        <button onclick="showSection('book_appointment')" class="nav-btn">📅 Book Appointment</button>
+        <button onclick="showSection('workers')" class="nav-btn">👷 List of Workers</button>
+        {% if current_user and current_user.id == shop.user_id %}
+            <button onclick="showSection('add_workers')" class="nav-btn">👷 Add Workers</button>
         {% endif %}
-    <form method="post" action="/shops/{{ shop.id }}/add_worker">
-        <label for="worker">Select Worker:</label>
-        <select name="user_id">
-            {% for user in users %}
-                <option value="{{ user.id }}">{{ user.username }}</option>
-            {% endfor %}
-        </select>
-        <button type="submit">Add Worker</button>
-    </form>
-{% endif %}
+        <button onclick="showSection('services')" class="nav-btn">🛠️ List of Services</button>
+        {% if current_user and current_user.id == shop.user_id %}
+            <button onclick="showSection('add_services')" class="nav-btn">🛠️ Add Services</button>
+        {% endif %}
+    </div>
 
-<h2>Workers</h2>
-<ul>
-    {% for worker in shop.workers %}
-        <li>{{ worker.user.username }}</li>
-    {% endfor %}
-</ul>
-    
-</ul>
+    <!-- Right Side Content -->
+    <div class="content">
+        
+        <!-- Appointments Section -->
+        <div id="list_of_appointments" class="section">
+            {% include "list_of_appointment.html" %}
+        </div>
+        <div id="book_appointment" class="section">
+            {% include "book_appointment.html" %}
+        </div>
+        <div id="workers" class="section">
+            {% include "list_of_workers.html" %}
+        </div>
+        <div id="add_workers" class="section">
+            {% include "add_workers.html" %}
+        </div>
+        <div id="services" class="section">
+            {% include "list_of_services.html" %}
+        </div>
+        <div id="add_services" class="section">
+            {% include "add_services.html" %}
+        </div>
+    </div>
+</div>
+
+
+<!-- JavaScript for Interactivity -->
+<script>
+    function showSection(sectionId) {
+        // Hide all sections
+        document.querySelectorAll('.section').forEach(section => {
+            section.classList.remove('active');
+        });
+
+        // Show the selected section
+        document.getElementById(sectionId).classList.add('active');
+
+        // Remove active class from all buttons
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('active-btn');
+        });
+
+        // Add active class to clicked button
+        event.target.classList.add('active-btn');
+    }
+
+    // Hide all sections initially
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll('.section').forEach(section => {
+            section.classList.remove('active');
+        });
+    });
+</script>
 
 {% endblock %}
