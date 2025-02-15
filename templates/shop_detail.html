@@ -1,15 +1,14 @@
 {% extends "base.html" %}
 {% block content %}
-
 <!-- Load CSS -->
 <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', path='css/styles_shop_details.css') }}">
 
-<!-- Sidebar Toggle Button for Mobile -->
-<button class="toggle-menu" onclick="toggleSidebar()">☰ Menu</button>
-
 <div class="main-container">
     
+    <!-- Mobile Menu Toggle Button -->
+    <button class="menu-toggle" onclick="toggleSidebar()">☰ Menu</button>
+
     <!-- Sidebar -->
     <div class="sidebar">
         <button onclick="showSection('list_of_appointments')" class="nav-btn">📅 List of Appointments</button>
@@ -25,7 +24,7 @@
 
     <!-- Content -->
     <div class="content">
-        <div id="list_of_appointments" class="section">
+        <div id="list_of_appointments" class="section active">
             {% include "list_of_appointment.html" %}
         </div>
         <div id="book_appointment" class="section">
@@ -49,47 +48,31 @@
     </div>
 </div>
 
-<!-- JavaScript for Sidebar & Section Handling -->
+<!-- JavaScript for Interactivity -->
 <script>
-    function toggleSidebar() {
-        document.querySelector('.sidebar').classList.toggle('open');
-    }
-
     function showSection(sectionId) {
-        // Hide all sections
         document.querySelectorAll('.section').forEach(section => {
             section.classList.remove('active');
         });
 
-        // Show the selected section
         document.getElementById(sectionId).classList.add('active');
 
-        // Remove active class from all buttons
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.classList.remove('active-btn');
         });
 
-        // Add active class to clicked button
         event.target.classList.add('active-btn');
 
-        // Store the active section in localStorage
         localStorage.setItem('activeSection', sectionId);
     }
 
-    // Restore last active section on page load
+    function toggleSidebar() {
+        document.querySelector(".sidebar").classList.toggle("show");
+    }
+
     document.addEventListener("DOMContentLoaded", function () {
         let activeSection = localStorage.getItem('activeSection') || 'list_of_appointments';
         showSection(activeSection);
-    });
-
-    // Close sidebar when clicking outside (for better mobile experience)
-    document.addEventListener("click", function(event) {
-        let sidebar = document.querySelector('.sidebar');
-        let button = document.querySelector('.toggle-menu');
-        
-        if (!sidebar.contains(event.target) && !button.contains(event.target)) {
-            sidebar.classList.remove('open');
-        }
     });
 </script>
 
