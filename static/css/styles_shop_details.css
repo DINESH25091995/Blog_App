@@ -22,8 +22,10 @@ body {
     flex-direction: column;
     gap: 15px;
     border-right: 2px solid #444;
+    transition: transform 0.3s ease-in-out;
 }
 
+/* Sidebar Buttons */
 .nav-btn {
     background-color: #444;
     border: none;
@@ -117,29 +119,42 @@ th {
         display: block;
         background-color: #007BFF;
         color: white;
-        padding: 10px;
+        padding: 15px;
         text-align: center;
         width: 100%;
-        font-size: 18px;
+        font-size: 20px;
         cursor: pointer;
         border: none;
     }
 
+    /* Sidebar Hidden by Default */
     .sidebar {
-        width: 100%;
-        display: none;
+        position: fixed;
+        left: -250px;
+        top: 0;
+        height: 100%;
+        width: 250px;
+        background-color: #222;
         flex-direction: column;
-        border-bottom: 2px solid #444;
+        transition: 0.3s ease-in-out;
+        padding-top: 60px;
+        z-index: 1000;
     }
 
     .sidebar.show {
-        display: flex;
+        left: 0;
     }
 
-    .content {
+    .nav-btn {
+        font-size: 14px;
         padding: 10px;
     }
 
+    .content {
+        padding: 15px;
+    }
+
+    /* Adjust Grid for Mobile */
     .grid-container {
         grid-template-columns: 1fr;
     }

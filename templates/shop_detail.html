@@ -64,6 +64,11 @@
         event.target.classList.add('active-btn');
 
         localStorage.setItem('activeSection', sectionId);
+        
+        // Close sidebar on mobile when a button is clicked
+        if (window.innerWidth <= 768) {
+            document.querySelector(".sidebar").classList.remove("show");
+        }
     }
 
     function toggleSidebar() {
