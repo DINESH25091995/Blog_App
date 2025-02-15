@@ -1,0 +1,62 @@
+<!-- For list of Appointment -->
+<h2> 📅 List of Appointments</h2>
+        {% for worker in shop.workers %}
+        <div class="card">
+            <h3>👷 Worker: {{ worker.user.username }}</h3>
+            
+            <table style="border-collapse: collapse; width: 70%;" border="1">
+                <thead>
+                    <tr>
+                        <th>Client Name</th>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Services</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set has_appointments = False %}
+                    {% for app in appointments %}
+                        {% if app.worker_id == worker.id %}
+                            {% set has_appointments = True %}
+                            <tr>
+                                <td>{{ app.user.username }}</td>
+                                <td>{{ app.date }}</td>
+                                <td>{{ app.time }}</td>
+                                <td>
+                                    <ul>
+                                        {% for service in app.services %}
+                                            <li>✅ {{ service.name }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
+                    <!-- {% if not has_appointments %}
+                        <tr>
+                            <td colspan="3" style="text-align: center;">No appointments</td>
+                        </tr>
+                    {% endif %} -->
+                </tbody>
+            </table>
+        </div>
+    {% endfor %}
+
+        <!-- {% for worker in shop.workers %}
+            <h3>Worker: {{ worker.user.username }}</h3>
+            <ul>
+                {% for app in appointments %}
+                    {% if app.worker_id == worker.id %}
+                        <li>
+                            <strong>Client:</strong> {{ app.user.username }} <br>
+                            <strong>Date:</strong> {{ app.date }} <br>
+                            <strong>Time:</strong> {{ app.time }} <br>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+            {% if not worker.appointments %}
+                <p>No appointments for this worker</p>
+            {% endif %}
+        {% endfor %} -->
+

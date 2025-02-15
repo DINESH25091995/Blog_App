@@ -1,26 +1,63 @@
 {% extends "base.html" %}
 
 {% block content %}
-<ul>
-    <h1>Welcome, {{ user.username }}</h1>
-    <p>What would you like to do?</p>
-</ul>
-<ul>
-    <ul>
-        <li><a href="/blogs/">View Blogs</a></li>
-        <li><a href="/blogs/create">Create Blog</a></li>
-        <li><a href="/shops/">View Shops</a></li>
-        <li><a href="/shops/create">Create Shop</a></li>
-    </ul>
-    <h2>list of appointments</h2>
-    {% for appointment in appointments %}
-        <h2><a href="/blogs/{{ appointment.id }}">{{ appointment.date }}, {{appointment.time}}</a></h2>
-       
-    {% endfor %}
-    <!-- <li><a href="/auth/logout">Logout</a></li> -->
-    <h2>List of blogs Created by {{ user.username }}</h2>
-    
-    {% include "list_of_blog.html" %}
-    
-</ul>
+<link rel="stylesheet" href="{{ url_for('static', path='css/styles_profile.css') }}">
+
+<div class="profile-container">
+    <!-- Welcome Section -->
+    <div class="welcome-section">
+        <h1>👋 Welcome, {{ user.username }}!</h1>
+        <p class="subtitle">What would you like to do today?</p>
+    </div>
+
+    <!-- Actions Section -->
+    <div class="actions-section">
+        <div class="card">
+            <a href="/blogs/">
+                <h3>📚 View Blogs</h3>
+                <p>Browse all available blogs.</p>
+            </a>
+        </div>
+        <div class="card">
+            <a href="/blogs/create">
+                <h3>📝 Create Blog</h3>
+                <p>Start writing your own blog.</p>
+            </a>
+        </div>
+        <div class="card">
+            <a href="/shops/">
+                <h3>🏪 View Shops</h3>
+                <p>Explore all available shops.</p>
+            </a>
+        </div>
+        <div class="card">
+            <a href="/shops/create">
+                <h3>➕ Create Shop</h3>
+                <p>Open a new shop and manage services.</p>
+            </a>
+        </div>
+    </div>
+
+    <!-- Appointments Section -->
+    <div class="appointments-section">
+        <h2>📅 List of Appointments</h2>
+        <ul>
+            {% for appointment in appointments %}
+                <li>
+                    <a href="/blogs/{{ appointment.id }}">
+                        🗓️ {{ appointment.date }} at {{ appointment.time }}
+                    </a>
+                </li>
+            {% else %}
+                <li>No appointments found.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- User's Blogs Section -->
+    <div class="blogs-section">
+        <h2>✍️ Blogs Created by {{ user.username }}</h2>
+        {% include "list_of_blog.html" %}
+    </div>
+</div>
 {% endblock %}

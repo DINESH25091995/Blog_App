@@ -1,6 +1,22 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, ForeignKey, Text,Table, Boolean
 from sqlalchemy.orm import relationship
 from database import Base
+
+# Many-to-Many Relationship Table
+worker_services = Table(
+    "worker_services",
+    Base.metadata,
+    Column("worker_id", Integer, ForeignKey("workers.id"), primary_key=True),
+    Column("service_id", Integer, ForeignKey("services.id"), primary_key=True),
+)
+
+# Many-to-Many Table for Appointments and Services
+appointment_services = Table(
+    "appointment_services",
+    Base.metadata,
+    Column("appointment_id", ForeignKey("appointments.id"), primary_key=True),
+    Column("service_id", ForeignKey("services.id"), primary_key=True),
+)
 
 class User(Base):
     __tablename__ = "users"
@@ -39,10 +55,15 @@ class Shop(Base):
     id = Column(Integer, primary_key=True, index=True)
     shop_name = Column(String)
     address = Column(String)
-    # pin = Column(Integer)
     user_id = Column(Integer, ForeignKey("users.id"))
+    # Adding open time, close time, and is_open field
+    open_time = Column(String, nullable=True)  # e.g., '09:00 AM'
+    close_time = Column(String, nullable=True)  # e.g., '06:00 PM'
+    is_open = Column(Boolean, default=False)  # Whether the shop is currently open or closed
+
     images = relationship("ShopImage", back_populates="shop", cascade="all, delete-orphan")
     workers = relationship("Worker", back_populates="shop", cascade="all, delete-orphan")
+    services = relationship("Service", back_populates="shop", cascade="all, delete-orphan")
 
 class ShopImage(Base):
     __tablename__ = "shop_images"
@@ -60,8 +81,19 @@ class Worker(Base):
     
     user = relationship("User", backref="worker_shops")
     shop = relationship("Shop", back_populates="workers")
+    # Many-to-Many Relationship with Services
+    services = relationship("Service", secondary=worker_services, back_populates="workers")
 
+class Service(Base):
+    __tablename__ = "services"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String)
 
+    shop_id = Column(Integer, ForeignKey("shops.id"))
+    shop = relationship("Shop", back_populates="services")
+    workers = relationship("Worker", secondary=worker_services, back_populates="services")
+    appointments = relationship("Appointment", secondary=appointment_services, back_populates="services")
+    
 
 class Appointment(Base):
     __tablename__ = "appointments"
@@ -75,3 +107,4 @@ class Appointment(Base):
     user = relationship("User", backref="appointments")
     worker = relationship("Worker", backref="appointments")
     shop = relationship("Shop", backref="appointments")
+    services = relationship("Service", secondary=appointment_services, back_populates="appointments")

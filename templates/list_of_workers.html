@@ -1,0 +1,68 @@
+<!-- For list of Workers -->
+{% if current_user and current_user.id == shop.user_id %}
+<h2>👷 List of Workers</h2>
+<div class="grid-container">
+    {% for worker in shop.workers %}
+        <div class="card">
+            <h3>👷 {{ worker.user.username }}</h3>
+
+            <h4>🛠️ Assigned Services</h4>
+            <ul class="service-list">
+                {% if worker.services %}
+                    {% for service in worker.services %}
+                        <li>✅ {{ service.name }}
+                            <form method="post" action="/shops/{{ shop.id }}/remove_worker_service" class="remove-form" style="display:inline;">
+                                <input type="hidden" name="worker_id" value="{{ worker.id }}">
+                                <input type="hidden" name="service_id" value="{{ service.id }}">
+                                <button type="submit" class="remove-button">Remove</button>
+                            </form>
+                        </li>
+                    {% endfor %}
+                {% else %}
+                    <li class="no-data">No services assigned</li>
+                {% endif %}
+            </ul>
+
+            <h4>🔧 Add Services:</h4>
+            <form method="post" action="/shops/{{ shop.id }}/add_worker_service" class="add-service-form">
+                <input type="hidden" name="worker_id" value="{{ worker.id }}">
+                <select name="service_id" class="service-select">
+                    {% for service in shop.services %}
+                        {% if service not in worker.services %}
+                            <option value="{{ service.id }}">{{ service.name }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+                <button type="submit" class="add-button">Add</button>
+            </form>
+
+            <form method="post" action="/shops/{{ shop.id }}/remove_worker" class="remove-worker-form">
+                <input type="hidden" name="worker_id" value="{{ worker.id }}">
+                <button type="submit" class="remove-worker-button">Remove Worker</button>
+            </form>
+        </div>
+    {% endfor %}
+</div>
+
+{% else %}
+    <h2>👷 List of Workers</h2>
+    <div class="grid-container">
+        {% for worker in shop.workers %}
+            <div class="card">
+                <h3>👷 {{ worker.user.username }}</h3>
+                <h4>🛠️ Assigned Services</h4>
+                <ul class="service-list">
+                    {% if worker.services %}
+                        {% for service in worker.services %}
+                            <li>✅ {{ service.name }}</li>
+                        {% endfor %}
+                    {% else %}
+                        <li class="no-data">No services assigned</li>
+                    {% endif %}
+                </ul>
+            </div>
+        {% endfor %}
+    </div>
+    
+{% endif %}
+
