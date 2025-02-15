@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 {% block content %}
 <!-- Load CSS -->
-<link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}">
+<!-- <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}"> -->
 <link rel="stylesheet" href="{{ url_for('static', path='css/styles_shop_details.css') }}">
+
+<!-- Mobile Sidebar Toggle Button -->
+<button class="menu-toggle" onclick="toggleSidebar()">☰ Menu</button>
 
 <div class="main-container">
     
-    <!-- Mobile Menu Toggle Button -->
-    <button class="menu-toggle" onclick="toggleSidebar()">☰ Menu</button>
-
     <!-- Sidebar -->
     <div class="sidebar">
         <button onclick="showSection('list_of_appointments')" class="nav-btn">📅 List of Appointments</button>
@@ -22,7 +22,7 @@
         <button onclick="showSection('shop_time')" class="nav-btn">📅 Shop Time</button>
     </div>
 
-    <!-- Content -->
+    <!-- Content Area -->
     <div class="content">
         <div id="list_of_appointments" class="section active">
             {% include "list_of_appointment.html" %}
@@ -64,7 +64,7 @@
         event.target.classList.add('active-btn');
 
         localStorage.setItem('activeSection', sectionId);
-        
+
         // Close sidebar on mobile when a button is clicked
         if (window.innerWidth <= 768) {
             document.querySelector(".sidebar").classList.remove("show");
