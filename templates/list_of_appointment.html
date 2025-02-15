@@ -1,5 +1,11 @@
 <!-- For list of Appointment -->
 <h2> 📅 List of Appointments</h2>
+        <!-- "View More" Button -->
+        {% if view_all %}
+            <button onclick="toggleView(false)">🔙 Show Today's Appointments</button>
+        {% else %}
+            <button onclick="toggleView(true)">📜 View More</button>
+        {% endif %}
         {% for worker in shop.workers %}
         <div class="card">
             <h3>👷 Worker: {{ worker.user.username }}</h3>
@@ -8,6 +14,7 @@
                 <thead>
                     <tr>
                         <th>Client Name</th>
+                        <th>Booking Time</th>
                         <th>Date</th>
                         <th>Time</th>
                         <th>Services</th>
@@ -20,6 +27,8 @@
                             {% set has_appointments = True %}
                             <tr>
                                 <td>{{ app.user.username }}</td>
+                                
+                                <td>{{ app.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                                 <td>{{ app.date }}</td>
                                 <td>{{ app.time }}</td>
                                 <td>
@@ -60,3 +69,9 @@
             {% endif %}
         {% endfor %} -->
 
+<!-- JavaScript to Toggle Between Today & History -->
+<script>
+    function toggleView(viewAll) {
+        window.location.href = `?view_all=${viewAll}`;
+    }
+</script>

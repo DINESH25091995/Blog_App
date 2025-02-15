@@ -8,6 +8,8 @@ import os
 import shutil
 from typing import List
 from datetime import datetime
+import pytz
+from fastapi import Query
 
 
 from routers.auth import get_current_user
@@ -64,18 +66,34 @@ async def create_shop(request: Request,
     return RedirectResponse(url="/shops/", status_code=303)
 
 @router.get("/{shop_id}")
-def shop_detail(request: Request, shop_id: int, db: Session = Depends(get_db)):
+def shop_detail(request: Request, 
+                shop_id: int, 
+                view_all: bool = Query(False),  # Flag to show full history
+                db: Session = Depends(get_db)):
     shop = db.query(Shop).filter(Shop.id == shop_id).first()
     users = db.query(User).all()  # Fetch all users for the dropdown
     user = request.session.get("user")
     
-    # appointments = db.query(Appointment).filter(Appointment.shop_id == shop_id).all()
-    appointments = (
+    today_date = datetime.now().strftime('%Y-%m-%d')  # Get today's date
+    
+    query = (
     db.query(Appointment)
     .join(Worker)
     .outerjoin(Worker.services)  # Join with services
-    .filter(Appointment.shop_id == shop_id)
-    .all())
+    .filter(Appointment.shop_id == shop_id))
+
+    if not view_all:
+        query = query.filter(Appointment.date == today_date)  # Show only today's appointments
+
+    appointments = query.all()
+
+    # appointments = db.query(Appointment).filter(Appointment.shop_id == shop_id).all()
+    # appointments = (
+    # db.query(Appointment)
+    # .join(Worker)
+    # .outerjoin(Worker.services)  # Join with services
+    # .filter(Appointment.shop_id == shop_id)
+    # .all())
 
     # appointments = db.query(Appointment).filter(Appointment.user_id == user["id"]).all()
     return templates.TemplateResponse("shop_detail.html", {"request": request, "shop": shop, "current_user": user, "users": users,"appointments":appointments})
@@ -158,8 +176,11 @@ def book_appointment(
     if not (open_time <= booking_time <= close_time):
         raise HTTPException(status_code=400, detail="Appointment time must be within shop hours.")
 
+     # ✅ Convert current UTC time to IST
+    ist_timezone = pytz.timezone('Asia/Kolkata')
+    created_at_ist = datetime.now(pytz.utc).astimezone(ist_timezone)
 
-    appointment = Appointment(user_id=user["id"], worker_id=worker_id, shop_id=shop_id, date=date, time=time)
+    appointment = Appointment(user_id=user["id"], worker_id=worker_id, shop_id=shop_id, date=date, time=time,created_at=created_at_ist,)
     db.add(appointment)
     db.commit()
     db.refresh(appointment)

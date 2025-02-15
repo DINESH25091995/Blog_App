@@ -1,13 +1,16 @@
 {% extends "base.html" %}
 {% block content %}
+
 <!-- Load CSS -->
 <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', path='css/styles_shop_details.css') }}">
 
+<!-- Sidebar Toggle Button for Mobile -->
+<button class="toggle-menu" onclick="toggleSidebar()">☰ Menu</button>
 
 <div class="main-container">
     
-    <!-- Left Side Navigation -->
+    <!-- Sidebar -->
     <div class="sidebar">
         <button onclick="showSection('list_of_appointments')" class="nav-btn">📅 List of Appointments</button>
         <button onclick="showSection('book_appointment')" class="nav-btn">📅 Book Appointment</button>
@@ -16,14 +19,12 @@
         {% if current_user and current_user.id == shop.user_id %}
             <button onclick="showSection('add_workers')" class="nav-btn">👷 Add Workers</button>
             <button onclick="showSection('add_services')" class="nav-btn">🛠️ Add Services</button>
-            <button onclick="showSection('shop_time')" class="nav-btn">📅 Shop Time</button>
         {% endif %}
+        <button onclick="showSection('shop_time')" class="nav-btn">📅 Shop Time</button>
     </div>
 
-    <!-- Right Side Content -->
+    <!-- Content -->
     <div class="content">
-        
-        <!-- Appointments Section -->
         <div id="list_of_appointments" class="section">
             {% include "list_of_appointment.html" %}
         </div>
@@ -48,9 +49,12 @@
     </div>
 </div>
 
-
-<!-- JavaScript for Interactivity -->
+<!-- JavaScript for Sidebar & Section Handling -->
 <script>
+    function toggleSidebar() {
+        document.querySelector('.sidebar').classList.toggle('open');
+    }
+
     function showSection(sectionId) {
         // Hide all sections
         document.querySelectorAll('.section').forEach(section => {
@@ -67,13 +71,25 @@
 
         // Add active class to clicked button
         event.target.classList.add('active-btn');
+
+        // Store the active section in localStorage
+        localStorage.setItem('activeSection', sectionId);
     }
 
-    // Hide all sections initially
-    document.addEventListener("DOMContentLoaded", function() {
-        document.querySelectorAll('.section').forEach(section => {
-            section.classList.remove('active');
-        });
+    // Restore last active section on page load
+    document.addEventListener("DOMContentLoaded", function () {
+        let activeSection = localStorage.getItem('activeSection') || 'list_of_appointments';
+        showSection(activeSection);
+    });
+
+    // Close sidebar when clicking outside (for better mobile experience)
+    document.addEventListener("click", function(event) {
+        let sidebar = document.querySelector('.sidebar');
+        let button = document.querySelector('.toggle-menu');
+        
+        if (!sidebar.contains(event.target) && !button.contains(event.target)) {
+            sidebar.classList.remove('open');
+        }
     });
 </script>
 

@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Text,Table, Boolean
+from sqlalchemy import Column, Integer, String, ForeignKey, Text,Table, Boolean,DateTime
 from sqlalchemy.orm import relationship
 from database import Base
+from datetime import datetime
 
 # Many-to-Many Relationship Table
 worker_services = Table(
@@ -93,7 +94,7 @@ class Service(Base):
     shop = relationship("Shop", back_populates="services")
     workers = relationship("Worker", secondary=worker_services, back_populates="services")
     appointments = relationship("Appointment", secondary=appointment_services, back_populates="services")
-    
+
 
 class Appointment(Base):
     __tablename__ = "appointments"
@@ -103,6 +104,7 @@ class Appointment(Base):
     shop_id = Column(Integer, ForeignKey("shops.id"))
     date = Column(String)
     time = Column(String)
+    created_at = Column(DateTime, default=datetime.utcnow)  # ✅ Automatically set booking time
 
     user = relationship("User", backref="appointments")
     worker = relationship("Worker", backref="appointments")
