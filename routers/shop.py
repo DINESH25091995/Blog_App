@@ -2,11 +2,13 @@ from fastapi import APIRouter, Form, Request, Depends, UploadFile, File
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
-from models import Blog,BlogImage,Shop, ShopImage, Appointment, User, Worker, Service
+from models import Blog,BlogImage,Shop, ShopImage, Appointment, User, Worker, Service,appointment_services
 from database import get_db
 import os
 import shutil
 from typing import List
+from datetime import datetime
+
 
 from routers.auth import get_current_user
 
@@ -67,7 +69,13 @@ def shop_detail(request: Request, shop_id: int, db: Session = Depends(get_db)):
     users = db.query(User).all()  # Fetch all users for the dropdown
     user = request.session.get("user")
     
-    appointments = db.query(Appointment).filter(Appointment.shop_id == shop_id).all()
+    # appointments = db.query(Appointment).filter(Appointment.shop_id == shop_id).all()
+    appointments = (
+    db.query(Appointment)
+    .join(Worker)
+    .outerjoin(Worker.services)  # Join with services
+    .filter(Appointment.shop_id == shop_id)
+    .all())
 
     # appointments = db.query(Appointment).filter(Appointment.user_id == user["id"]).all()
     return templates.TemplateResponse("shop_detail.html", {"request": request, "shop": shop, "current_user": user, "users": users,"appointments":appointments})
@@ -129,10 +137,41 @@ def add_worker(request: Request,
 
 
 @router.post("/{shop_id}/book_appointment")
-def book_appointment(shop_id: int, worker_id: int = Form(...), date: str = Form(...), time: str = Form(...), db: Session = Depends(get_db), user=Depends(get_current_user)):
+def book_appointment(
+    shop_id: int,
+    worker_id: int = Form(...),  # Get worker ID from form
+    date: str = Form(...),       # Get date from form
+    time: str = Form(...),       # Get time from form
+    selected_service_ids: List[int] = Form(...),  # Get selected service IDs as a list
+    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user),
+):
+    
+    shop = db.query(Shop).filter(Shop.id == shop_id).first()
+    if not shop.is_open:
+        raise HTTPException(status_code=400, detail="Shop is closed, cannot book appointment.")
+
+    booking_time = datetime.strptime(time, "%H:%M").time()
+    open_time = datetime.strptime(shop.open_time, "%H:%M").time()
+    close_time = datetime.strptime(shop.close_time, "%H:%M").time()
+
+    if not (open_time <= booking_time <= close_time):
+        raise HTTPException(status_code=400, detail="Appointment time must be within shop hours.")
+
+
     appointment = Appointment(user_id=user["id"], worker_id=worker_id, shop_id=shop_id, date=date, time=time)
     db.add(appointment)
     db.commit()
+    db.refresh(appointment)
+
+    # Insert selected services into the association table
+    if selected_service_ids:
+        db.execute(
+            appointment_services.insert(),
+            [{"appointment_id": appointment.id, "service_id": service_id} for service_id in selected_service_ids]
+        )
+        db.commit()
+
     return RedirectResponse(url=f"/shops/{shop_id}", status_code=303)
 
 
@@ -241,4 +280,26 @@ def remove_worker_service(
     worker.services.remove(service)
     db.commit()
 
+    return RedirectResponse(url=f"/shops/{shop_id}", status_code=303)
+
+
+@router.post("/{shop_id}/set_schedule")
+def set_shop_schedule(
+    shop_id: int,
+    open_time: str = Form(...),
+    close_time: str = Form(...),
+    is_open: bool = Form(...),
+    db: Session = Depends(get_db)
+):
+    shop = db.query(Shop).filter(Shop.id == shop_id).first()
+    if not shop:
+        return {"error": "Shop not found"}
+    if open_time and close_time :
+        shop.open_time = open_time
+        shop.close_time = close_time
+        
+    shop.is_open = is_open
+        
+
+    db.commit()
     return RedirectResponse(url=f"/shops/{shop_id}", status_code=303)

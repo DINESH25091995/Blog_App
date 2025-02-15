@@ -12,12 +12,11 @@
         <button onclick="showSection('list_of_appointments')" class="nav-btn">📅 List of Appointments</button>
         <button onclick="showSection('book_appointment')" class="nav-btn">📅 Book Appointment</button>
         <button onclick="showSection('workers')" class="nav-btn">👷 List of Workers</button>
-        {% if current_user and current_user.id == shop.user_id %}
-            <button onclick="showSection('add_workers')" class="nav-btn">👷 Add Workers</button>
-        {% endif %}
         <button onclick="showSection('services')" class="nav-btn">🛠️ List of Services</button>
         {% if current_user and current_user.id == shop.user_id %}
+            <button onclick="showSection('add_workers')" class="nav-btn">👷 Add Workers</button>
             <button onclick="showSection('add_services')" class="nav-btn">🛠️ Add Services</button>
+            <button onclick="showSection('shop_time')" class="nav-btn">📅 Shop Time</button>
         {% endif %}
     </div>
 
@@ -42,6 +41,9 @@
         </div>
         <div id="add_services" class="section">
             {% include "add_services.html" %}
+        </div>
+        <div id="shop_time" class="section">
+            {% include "shop_time.html" %}
         </div>
     </div>
 </div>

@@ -1,0 +1,41 @@
+<form action="/shops/{{ shop.id }}/set_schedule" method="post">
+    <label for="open_time">Open Time:</label>
+    <input type="time" id="open_time" name="open_time">
+
+    <label for="close_time">Close Time:</label>
+    <input type="time" id="close_time" name="close_time">
+
+    <label for="is_open">Is Open:</label>
+    <select id="is_open" name="is_open">
+        <option value="true">Open</option>
+        <option value="false">Closed</option>
+    </select>
+
+    <button type="submit">Set Schedule</button>
+</form>
+
+
+    <!-- For list of Services -->
+    <h2>Shop Schedule</h2>
+    <table style="border-collapse: collapse; width: 70%;" border="1">
+        <thead>
+            <tr>
+                <th>Open Time</th>
+                <th>Close Time</th>
+                <th>Is Open</th>
+            </tr>
+        </thead>
+        <tbody>
+                {% if shop %}
+                    <tr>
+                        <td>{{ shop.open_time }}</td>
+                        <td>{{ shop.close_time }}</td>
+                        {% if shop.is_open %}
+                            <td>Yes</td>
+                        {% else %}
+                            <td>No</td>
+                        {% endif %}
+                    </tr>
+                {% endif %}
+        </tbody>
+    </table>

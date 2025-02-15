@@ -1,5 +1,5 @@
 <!-- For Booking Appointment -->
-<h2>Book an Appointment</h2>
+<!-- <h2>Book an Appointment</h2>
 <ul>
     <form method="post" action="/shops/{{ shop.id }}/book_appointment">
         <div style="margin-bottom: 10px;">
@@ -23,4 +23,51 @@
         
         <button type="submit">Book Appointment</button>
     </form>
-</ul>
+</ul> -->
+
+<form method="post" action="/shops/{{ shop.id }}/book_appointment">
+    <div style="margin-bottom: 10px;">
+        <label for="worker">Select Worker:</label>
+        <select name="worker_id" id="worker" required>
+            <option value="">-- Select Worker --</option>
+            {% for worker in shop.workers %}
+            <option value="{{ worker.id }}">{{ worker.user.username }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    
+    <div style="margin-bottom: 10px;">
+        <label for="date">Select Date:</label>
+        <input type="date" name="date" required>
+    </div>
+    
+
+    <div style="margin-bottom: 10px;">
+        <label for="time">Select Time:</label>
+        <input type="time" name="time" required>
+    </div>
+    
+
+    <div style="margin-bottom: 10px;">
+        <label for="services">Select Services:</label>
+        <div id="services-list">
+            {% for worker in shop.workers %}
+            <div class="worker-services" data-worker="{{ worker.id }}" style="display: none;">
+                {% for service in worker.services %}
+                <input type="checkbox" name="selected_service_ids" value="{{ service.id }}"> {{ service.name }}<br>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <button type="submit">Book Appointment</button>
+</form>
+
+<script>
+document.getElementById('worker').addEventListener('change', function() {
+    var selectedWorker = this.value;
+    document.querySelectorAll('.worker-services').forEach(div => div.style.display = 'none');
+    document.querySelector('[data-worker="' + selectedWorker + '"]').style.display = 'block';
+});
+</script>
