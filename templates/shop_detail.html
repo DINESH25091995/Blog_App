@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 {% block content %}
 <!-- Load CSS -->
-<!-- <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}"> -->
+<link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', path='css/styles_shop_details.css') }}">
-
-<!-- Mobile Sidebar Toggle Button -->
-<button class="menu-toggle" onclick="toggleSidebar()">☰ Menu</button>
 
 <div class="main-container">
     
-    <!-- Sidebar -->
+    <!-- Sidebar Toggle Button for Mobile -->
+    <button class="menu-toggle" onclick="toggleSidebar()">☰ Menu</button>
+
+    <!-- Left Side Navigation -->
     <div class="sidebar">
         <button onclick="showSection('list_of_appointments')" class="nav-btn">📅 List of Appointments</button>
         <button onclick="showSection('book_appointment')" class="nav-btn">📅 Book Appointment</button>
@@ -22,29 +22,15 @@
         <button onclick="showSection('shop_time')" class="nav-btn">📅 Shop Time</button>
     </div>
 
-    <!-- Content Area -->
+    <!-- Right Side Content -->
     <div class="content">
-        <div id="list_of_appointments" class="section active">
-            {% include "list_of_appointment.html" %}
-        </div>
-        <div id="book_appointment" class="section">
-            {% include "book_appointment.html" %}
-        </div>
-        <div id="workers" class="section">
-            {% include "list_of_workers.html" %}
-        </div>
-        <div id="add_workers" class="section">
-            {% include "add_workers.html" %}
-        </div>
-        <div id="services" class="section">
-            {% include "list_of_services.html" %}
-        </div>
-        <div id="add_services" class="section">
-            {% include "add_services.html" %}
-        </div>
-        <div id="shop_time" class="section">
-            {% include "shop_time.html" %}
-        </div>
+        <div id="list_of_appointments" class="section">{% include "list_of_appointment.html" %}</div>
+        <div id="book_appointment" class="section">{% include "book_appointment.html" %}</div>
+        <div id="workers" class="section">{% include "list_of_workers.html" %}</div>
+        <div id="add_workers" class="section">{% include "add_workers.html" %}</div>
+        <div id="services" class="section">{% include "list_of_services.html" %}</div>
+        <div id="add_services" class="section">{% include "add_services.html" %}</div>
+        <div id="shop_time" class="section">{% include "shop_time.html" %}</div>
     </div>
 </div>
 
@@ -64,21 +50,16 @@
         event.target.classList.add('active-btn');
 
         localStorage.setItem('activeSection', sectionId);
-
-        // Close sidebar on mobile when a button is clicked
-        if (window.innerWidth <= 768) {
-            document.querySelector(".sidebar").classList.remove("show");
-        }
-    }
-
-    function toggleSidebar() {
-        document.querySelector(".sidebar").classList.toggle("show");
     }
 
     document.addEventListener("DOMContentLoaded", function () {
         let activeSection = localStorage.getItem('activeSection') || 'list_of_appointments';
         showSection(activeSection);
     });
+
+    function toggleSidebar() {
+        document.querySelector(".sidebar").classList.toggle("open");
+    }
 </script>
 
 {% endblock %}

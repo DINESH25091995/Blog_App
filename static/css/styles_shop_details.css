@@ -6,7 +6,7 @@ body {
     background-color: #f9f9f9;
 }
 
-/* Main Layout */
+/* Main Container */
 .main-container {
     display: flex;
     height: 100vh;
@@ -28,9 +28,9 @@ body {
 .nav-btn {
     background-color: #444;
     border: none;
-    padding: 12px;
+    padding: 14px;  /* Larger for mobile */
     color: white;
-    font-size: 16px;
+    font-size: 18px; /* Increased text size */
     text-align: left;
     width: 100%;
     cursor: pointer;
@@ -47,7 +47,7 @@ body {
     color: white;
 }
 
-/* Content Area */
+/* Content */
 .content {
     flex-grow: 1;
     padding: 20px;
@@ -69,94 +69,58 @@ body {
     transform: translateY(0);
 }
 
-/* Card Style */
-.card {
-    background: white;
-    padding: 15px;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-    margin-bottom: 15px;
-    transition: transform 0.3s ease-in-out;
-}
-
-.card:hover {
-    transform: scale(1.05);
-}
-
-/* Grid Layout */
-.grid-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 15px;
-}
-
-/* Table Styling */
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-}
-
-th, td {
-    padding: 10px;
-    border: 1px solid #ddd;
-    text-align: left;
-}
-
-th {
+/* Responsive Sidebar for Mobile */
+.menu-toggle {
+    display: none;
+    font-size: 22px;
     background: #007BFF;
     color: white;
+    padding: 10px;
+    border: none;
+    cursor: pointer;
+    width: 100%;
 }
 
-/* Responsive Design */
+/* Mobile Optimizations */
 @media (max-width: 768px) {
     .main-container {
         flex-direction: column;
     }
 
-    /* Mobile Menu */
-    .menu-toggle {
-        display: block;
-        background-color: #007BFF;
-        color: white;
-        padding: 15px;
-        text-align: center;
-        width: 100%;
-        font-size: 20px;
-        cursor: pointer;
-        border: none;
-    }
-
-    /* Sidebar Hidden by Default */
     .sidebar {
         position: fixed;
-        left: -250px;
         top: 0;
+        left: -100%;
+        width: 80%;
         height: 100%;
-        width: 250px;
         background-color: #222;
-        flex-direction: column;
-        transition: 0.3s ease-in-out;
-        padding-top: 60px;
         z-index: 1000;
+        transition: left 0.3s ease-in-out;
     }
 
-    .sidebar.show {
+    .sidebar.open {
         left: 0;
     }
 
-    .nav-btn {
-        font-size: 14px;
-        padding: 10px;
+    .menu-toggle {
+        display: block;
     }
 
     .content {
-        padding: 15px;
+        padding: 12px;
     }
 
-    /* Adjust Grid for Mobile */
+    /* Adjust text sizes */
+    h1, h2, h3 {
+        font-size: 1.4em;  /* Increase headings */
+    }
+
+    p {
+        font-size: 1.2em;  /* Increase paragraph size */
+    }
+
     .grid-container {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     }
 
     table {
@@ -164,6 +128,12 @@ th {
     }
 
     th, td {
-        padding: 8px;
+        padding: 10px;
+    }
+
+    /* Make buttons larger for touch screens */
+    button {
+        font-size: 1.1em;
+        padding: 12px;
     }
 }
