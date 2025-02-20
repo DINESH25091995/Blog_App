@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Verify OTP</title>
+</head>
+<body>
+    <h2>Verify OTP</h2>
+    <form action="/auth/verify-otp" method="post">
+        <label>Email or Mobile:</label>
+        <input type="text" name="identifier" required>
+        <label>OTP:</label>
+        <input type="text" name="otp" required>
+        <button type="submit">Verify</button>
+    </form>
+</body>
+</html>

@@ -5,6 +5,12 @@
         <form method="post" action="/shops/{{ shop.id }}/add_service">
             <label for="service_name">Service Name:</label>
             <input type="text" name="service_name" required>
+            
+            <label for="duration_minutes">Duration (minutes):</label>
+            <input type="number" name="duration_minutes" required>
+
+            <label for="price">Price:</label>
+            <input type="number" name="price" step="0.01" required>
             <button type="submit">Add Service</button>
         </form>
     {% endif %}
