@@ -1,11 +1,38 @@
 
     <!-- For list of Services -->
-    <h2>🛠️ List of Services</h2>
-    <div class="grid-container">
+    <!-- <h2>🛠️ List of Services</h2> -->
+    <!-- <div class="grid-container">
         {% for service in shop.services %}
             <div class="card">
                 <h3>✅ {{ service.name }}</h3>
+                <h3>✅ {{ service.price }}</h3>
+                <h3>✅ {{ service.duration_minutes }}</h3>
             </div>
         {% endfor %}
-    </div>
+    </div> -->
+
+        <div class="card">  
+            <h2>🛠️ List of Services</h2>
+            <table style="border-collapse: collapse; width: 70%;" border="1">
+                <thead>
+                    <tr>
+                        <th>Service</th>
+                        <th>Price</th>
+                        <th>Estimated Time Take</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for service in shop.services %}
+                            <tr>
+                                <td>{{ service.name }}</td>
+                                <td>{{ service.price }}</td>
+                                {% if current_user and current_user.id == shop.user_id %}
+                                    <td>{{ service.duration_minutes }}</td>
+                                {% endif %}
+                            </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+   
 

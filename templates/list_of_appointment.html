@@ -18,6 +18,9 @@
                         <th>Date</th>
                         <th>Time</th>
                         <th>Services</th>
+                        {% if current_user and current_user.id == shop.user_id %}
+                        <th>Cost</th>
+                        {% endif %}
                     </tr>
                 </thead>
                 <tbody>
@@ -37,6 +40,11 @@
                                             <li>✅ {{ service.name }}</li>
                                         {% endfor %}
                                     </ul>
+                                </td>
+                                <td>
+                                    {% if current_user and current_user.id == shop.user_id %}
+                                    {{app.total_price}}
+                                    {% endif %}
                                 </td>
                             </tr>
                         {% endif %}

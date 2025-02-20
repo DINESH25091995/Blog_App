@@ -17,6 +17,9 @@ python-dotenv
 passlib
 psycopg2-binary
 pytz
+fastapi[all] sqlalchemy databases passlib pyjwt
+fastapi uvicorn sqlalchemy databases passlib python-jose bcrypt python-multipart
+
 
 
 

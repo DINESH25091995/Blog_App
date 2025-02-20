@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Text,Table, Boolean,DateTime
+from sqlalchemy import Column, Integer, String, ForeignKey, Text,Table, Boolean,DateTime,Float
 from sqlalchemy.orm import relationship
 from database import Base
 from datetime import datetime
@@ -19,11 +19,22 @@ appointment_services = Table(
     Column("service_id", ForeignKey("services.id"), primary_key=True),
 )
 
+# class User(Base):
+#     __tablename__ = "users"
+#     id = Column(Integer, primary_key=True, index=True)
+#     username = Column(String, unique=True, index=True)
+#     hashed_password = Column(String)
+
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True)
-    hashed_password = Column(String)
+    username = Column(String, index=True)
+    email = Column(String, unique=True, index=True, nullable=True)
+    mobile = Column(String, unique=True, index=True, nullable=True)
+    password = Column(String, nullable=True)  # Will be hashed
+    is_verified = Column(Boolean, default=False)  # For OTP verification
+    otp = Column(String, nullable=True)  # Stores the OTP temporarily
+
 
 class Blog(Base):
     __tablename__ = "blogs"
@@ -89,6 +100,8 @@ class Service(Base):
     __tablename__ = "services"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String)
+    duration_minutes = Column(Integer, nullable=False)  # Time required for the service (in minutes)
+    price = Column(Float, nullable=False)  # Cost of the service
 
     shop_id = Column(Integer, ForeignKey("shops.id"))
     shop = relationship("Shop", back_populates="services")
@@ -105,7 +118,9 @@ class Appointment(Base):
     date = Column(String)
     time = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)  # ✅ Automatically set booking time
-
+    total_price = Column(Float, nullable=False)  # ✅ Total payment amount
+    payment_status = Column(String, default="Pending")  # Can be "Pending" or "Paid"
+    
     user = relationship("User", backref="appointments")
     worker = relationship("Worker", backref="appointments")
     shop = relationship("Shop", backref="appointments")

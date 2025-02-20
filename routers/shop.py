@@ -7,9 +7,12 @@ from database import get_db
 import os
 import shutil
 from typing import List
-from datetime import datetime
+from datetime import datetime,timedelta,time
 import pytz
 from fastapi import Query
+from sqlalchemy.sql import func, and_
+
+
 
 
 from routers.auth import get_current_user
@@ -154,51 +157,67 @@ def add_worker(request: Request,
     return RedirectResponse(url=f"/shops/{shop_id}", status_code=303)
 
 
-@router.post("/{shop_id}/book_appointment")
-def book_appointment(
-    shop_id: int,
-    worker_id: int = Form(...),  # Get worker ID from form
-    date: str = Form(...),       # Get date from form
-    time: str = Form(...),       # Get time from form
-    selected_service_ids: List[int] = Form(...),  # Get selected service IDs as a list
-    db: Session = Depends(get_db),
-    user: dict = Depends(get_current_user),
-):
+# @router.post("/{shop_id}/book_appointment")
+# def book_appointment(
+#     shop_id: int,
+#     worker_id: int = Form(...),  # Get worker ID from form
+#     date: str = Form(...),       # Get date from form
+#     time: str = Form(...),       # Get time from form
+#     selected_service_ids: List[int] = Form(...),  # Get selected service IDs as a list
+#     db: Session = Depends(get_db),
+#     user: dict = Depends(get_current_user),
+# ):
     
-    shop = db.query(Shop).filter(Shop.id == shop_id).first()
-    if not shop.is_open:
-        raise HTTPException(status_code=400, detail="Shop is closed, cannot book appointment.")
+#     shop = db.query(Shop).filter(Shop.id == shop_id).first()
+#     if not shop.is_open:
+#         raise HTTPException(status_code=400, detail="Shop is closed, cannot book appointment.")
 
-    booking_time = datetime.strptime(time, "%H:%M").time()
-    open_time = datetime.strptime(shop.open_time, "%H:%M").time()
-    close_time = datetime.strptime(shop.close_time, "%H:%M").time()
+#     booking_time = datetime.strptime(time, "%H:%M").time()
+#     open_time = datetime.strptime(shop.open_time, "%H:%M").time()
+#     close_time = datetime.strptime(shop.close_time, "%H:%M").time()
 
-    if not (open_time <= booking_time <= close_time):
-        raise HTTPException(status_code=400, detail="Appointment time must be within shop hours.")
+#     if not (open_time <= booking_time <= close_time):
+#         raise HTTPException(status_code=400, detail="Appointment time must be within shop hours.")
 
-     # ✅ Convert current UTC time to IST
-    ist_timezone = pytz.timezone('Asia/Kolkata')
-    created_at_ist = datetime.now(pytz.utc).astimezone(ist_timezone)
+#     # ✅ Calculate total price based on selected services
+#     total_price = (
+#         db.query(func.sum(Service.price))
+#         .filter(Service.id.in_(selected_service_ids))
+#         .scalar()
+#     ) or 0.0  # If no services selected, default to 0
 
-    appointment = Appointment(user_id=user["id"], worker_id=worker_id, shop_id=shop_id, date=date, time=time,created_at=created_at_ist,)
-    db.add(appointment)
-    db.commit()
-    db.refresh(appointment)
 
-    # Insert selected services into the association table
-    if selected_service_ids:
-        db.execute(
-            appointment_services.insert(),
-            [{"appointment_id": appointment.id, "service_id": service_id} for service_id in selected_service_ids]
-        )
-        db.commit()
+#      # ✅ Convert current UTC time to IST
+#     ist_timezone = pytz.timezone('Asia/Kolkata')
+#     created_at_ist = datetime.now(pytz.utc).astimezone(ist_timezone)
 
-    return RedirectResponse(url=f"/shops/{shop_id}", status_code=303)
+#     appointment = Appointment(user_id=user["id"], 
+#                             worker_id=worker_id, 
+#                             shop_id=shop_id, 
+#                             date=date, 
+#                             time=time,
+#                             total_price=total_price,  # ✅ Save total amount
+#                             created_at=created_at_ist)
+#     db.add(appointment)
+#     db.commit()
+#     db.refresh(appointment)
+
+#     # Insert selected services into the association table
+#     if selected_service_ids:
+#         db.execute(
+#             appointment_services.insert(),
+#             [{"appointment_id": appointment.id, "service_id": service_id} for service_id in selected_service_ids]
+#         )
+#         db.commit()
+
+#     return RedirectResponse(url=f"/shops/{shop_id}", status_code=303)
 
 
 @router.post("/{shop_id}/add_service")
 def add_service(shop_id: int, 
-                service_name: str = Form(...), 
+                service_name: str = Form(...),
+                duration_minutes: int = Form(...),  # New field for duration
+                price: float = Form(...),  # New field for price 
                 db: Session = Depends(get_db), 
                 owner=Depends(get_current_user)):
     shop = db.query(Shop).filter(Shop.id == shop_id).first()
@@ -209,7 +228,10 @@ def add_service(shop_id: int,
     if shop.user_id != owner["id"]:
         raise HTTPException(status_code=403, detail="You are not allowed to add services")
 
-    new_service = Service(name=service_name, shop_id=shop_id)
+    new_service = Service(name=service_name,
+                          duration_minutes=duration_minutes,
+                          price=price,
+                          shop_id=shop_id)
     db.add(new_service)
     db.commit()
 
@@ -323,4 +345,148 @@ def set_shop_schedule(
         
 
     db.commit()
+    return RedirectResponse(url=f"/shops/{shop_id}", status_code=303)
+
+
+def get_next_available_time(db, worker_id, date, shop_open_time):
+    """Finds the earliest available time slot for a worker on a given date."""
+    
+    # Ensure shop_open_time is a time object
+    shop_open = shop_open_time if isinstance(shop_open_time, time) else datetime.strptime(shop_open_time, "%H:%M").time()
+
+    # Fetch all existing appointments for the worker
+    appointments = (
+        db.query(Appointment)
+        .filter(Appointment.worker_id == worker_id, Appointment.date == date)
+        .order_by(Appointment.time.asc())
+        .all()
+    )
+
+    available_time = shop_open
+
+    for appointment in appointments:
+        start_time = datetime.strptime(appointment.time, "%H:%M").time()
+
+        # ✅ Correctly calculate the end time of this appointment
+        appointment_duration = (
+            db.query(func.sum(Service.duration_minutes))
+            .join(appointment_services)
+            .filter(appointment_services.c.appointment_id == appointment.id)
+            .scalar()
+        ) or 0
+
+        end_time = (datetime.combine(datetime.today(), start_time) + timedelta(minutes=appointment_duration)).time()
+
+        # Move available time forward if it's occupied
+        if available_time < end_time:
+            available_time = end_time
+
+    return available_time  # ✅ Return as time object (not string)
+
+
+@router.post("/{shop_id}/book_appointment")
+def book_appointment(
+    shop_id: int,
+    worker_id: int = Form(...),
+    date: str = Form(...),
+    time: str = Form(None),  # Optional time for serial booking
+    selected_service_ids: list[int] = Form(...),
+    prefer_earliest: bool = Form(False),  # ✅ Option to book earliest available slot
+    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user),
+):
+    """Handles appointment booking with custom time selection or earliest available slot."""
+    
+    shop = db.query(Shop).filter(Shop.id == shop_id).first()
+    if not shop or not shop.is_open:
+        raise HTTPException(status_code=400, detail="Shop is closed, cannot book appointment.")
+
+    # ✅ Convert shop open/close times
+    shop_open_time = datetime.strptime(shop.open_time, "%H:%M").time()
+    shop_close_time = datetime.strptime(shop.close_time, "%H:%M").time()
+
+    # ✅ Calculate total duration of selected services
+    total_duration = (
+        db.query(func.sum(Service.duration_minutes))
+        .filter(Service.id.in_(selected_service_ids))
+        .scalar()
+    ) or 0
+
+    # ✅ Determine booking time (Earliest or Custom)
+    if prefer_earliest or not time:
+        booking_time = get_next_available_time(db, worker_id, date, shop_open_time)  # ✅ Already a `datetime.time` object
+    else:
+        booking_time = datetime.strptime(time, "%H:%M").time()  # Convert string to `datetime.time`
+
+    # ✅ Ensure booking time is within shop hours
+    if booking_time < shop_open_time or booking_time > shop_close_time:
+        raise HTTPException(status_code=400, detail="Appointment time must be within shop hours.")
+
+    # ✅ Check for overlapping appointments
+    existing_appointments = db.query(Appointment).filter(
+        Appointment.worker_id == worker_id,
+        Appointment.date == date
+    ).all()
+
+    for appointment in existing_appointments:
+        start_time = datetime.strptime(appointment.time, "%H:%M").time()
+
+        # ✅ Calculate the end time correctly
+        appointment_duration = (
+            db.query(func.sum(Service.duration_minutes))
+            .join(appointment_services)
+            .filter(appointment_services.c.appointment_id == appointment.id)
+            .scalar()
+        ) or 0
+
+        end_time = (datetime.combine(datetime.today(), start_time) + timedelta(minutes=appointment_duration)).time()
+
+        # ✅ Check if new appointment overlaps with existing one
+        if start_time <= booking_time < end_time:
+            raise HTTPException(status_code=400, detail="Selected time is already booked. Try another time.")
+
+    # ✅ Calculate end time
+    start_time_obj = datetime.combine(datetime.today(), booking_time)
+    end_time_obj = start_time_obj + timedelta(minutes=total_duration)
+    end_time = end_time_obj.time()
+
+    # ✅ Ensure appointment doesn't exceed shop closing time
+    if end_time > shop_close_time:
+        raise HTTPException(status_code=400, detail="Services extend beyond shop closing time.")
+
+    # ✅ Calculate total price
+    total_price = (
+        db.query(func.sum(Service.price))
+        .filter(Service.id.in_(selected_service_ids))
+        .scalar()
+    ) or 0.0
+
+    # ✅ Convert current time to IST (Indian Standard Time)
+    ist_timezone = pytz.timezone("Asia/Kolkata")
+    created_at_ist = datetime.now(pytz.utc).astimezone(ist_timezone)
+
+    # ✅ Create and save the appointment
+    appointment = Appointment(
+        user_id=user["id"],
+        worker_id=worker_id,
+        shop_id=shop_id,
+        date=date,
+        time=booking_time.strftime("%H:%M"),  # Convert time object to string before storing
+        total_price=total_price,
+        created_at=created_at_ist,
+    )
+
+    db.add(appointment)
+    db.commit()
+    db.refresh(appointment)
+
+    # ✅ Link selected services to appointment
+    if selected_service_ids:
+        db.execute(
+            appointment_services.insert(),
+            [{"appointment_id": appointment.id, "service_id": service_id} for service_id in selected_service_ids]
+        )
+        db.commit()
+
+    # return {"message": "Appointment booked successfully", "appointment_time": booking_time.strftime("%H:%M")}
     return RedirectResponse(url=f"/shops/{shop_id}", status_code=303)

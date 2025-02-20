@@ -25,7 +25,9 @@
     </form>
 </ul> -->
 
-<form method="post" action="/shops/{{ shop.id }}/book_appointment">
+<!-- ====================
+============================================== -->
+<!-- <form method="post" action="/shops/{{ shop.id }}/book_appointment">
     <div style="margin-bottom: 10px;">
         <label for="worker">Select Worker:</label>
         <select name="worker_id" id="worker" required>
@@ -70,4 +72,98 @@ document.getElementById('worker').addEventListener('change', function() {
     document.querySelectorAll('.worker-services').forEach(div => div.style.display = 'none');
     document.querySelector('[data-worker="' + selectedWorker + '"]').style.display = 'block';
 });
+</script> -->
+
+
+<form method="post" action="/shops/{{ shop.id }}/book_appointment">
+    <label for="worker">Select Worker:</label>
+    <select name="worker_id" id="worker" required>
+        <option value="">-- Select Worker --</option>
+        {% for worker in shop.workers %}
+        <option value="{{ worker.id }}">{{ worker.user.username }}</option>
+        {% endfor %}
+    </select>
+
+    <label for="date">Select Date:</label>
+    <input type="date" name="date" id="date" required>
+
+    <label for="time">Select Time:</label>
+    <input type="time" name="time" id="time">
+    <input type="checkbox" name="prefer_earliest" id="prefer_earliest"> Book Earliest Available Slot
+
+    <label for="services">Select Services:</label>
+    <div id="services-list">
+        {% for worker in shop.workers %}
+        <div class="worker-services" data-worker="{{ worker.id }}" style="display: none;">
+            {% for service in worker.services %}
+            <input type="checkbox" name="selected_service_ids" value="{{ service.id }}"
+                data-price="{{ service.price }}"
+                data-duration="{{ service.duration_minutes }}"
+                data-name="{{ service.name }}">
+            {{ service.name }} - ₹{{ service.price }} ({{ service.duration_minutes }} mins)<br>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <h3>Cart</h3>
+    <div id="cart">
+        <ul id="cart-items"></ul>
+        <p>Total Price: ₹<span id="total-price">0</span></p>
+        <p>Total Duration: <span id="total-duration">0</span> minutes</p>
+    </div>
+
+    <label for="payment_method">Payment Method:</label>
+    <select name="payment_method" required>
+        <option value="cash">In Cash</option>
+    </select>
+
+    <button type="submit">Proceed to Book Appointment</button>
+</form>
+
+<script>
+document.getElementById('worker').addEventListener('change', function() {
+    var selectedWorker = this.value;
+    document.querySelectorAll('.worker-services').forEach(div => div.style.display = 'none');
+    document.querySelector('[data-worker="' + selectedWorker + '"]').style.display = 'block';
+});
+
+let cart = {};
+let totalPrice = 0;
+let totalDuration = 0;
+
+document.querySelectorAll('[name="selected_service_ids"]').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+        let serviceId = this.value;
+        let serviceName = this.dataset.name;
+        let servicePrice = parseFloat(this.dataset.price);
+        let serviceDuration = parseInt(this.dataset.duration);
+
+        if (this.checked) {
+            cart[serviceId] = { name: serviceName, price: servicePrice, duration: serviceDuration };
+            totalPrice += servicePrice;
+            totalDuration += serviceDuration;
+        } else {
+            delete cart[serviceId];
+            totalPrice -= servicePrice;
+            totalDuration -= serviceDuration;
+        }
+        
+        updateCart();
+    });
+});
+
+function updateCart() {
+    let cartList = document.getElementById("cart-items");
+    cartList.innerHTML = "";
+
+    Object.values(cart).forEach(item => {
+        let li = document.createElement("li");
+        li.textContent = `${item.name} - ₹${item.price} (${item.duration} mins)`;
+        cartList.appendChild(li);
+    });
+
+    document.getElementById("total-price").textContent = totalPrice.toFixed(2);
+    document.getElementById("total-duration").textContent = totalDuration;
+}
 </script>
