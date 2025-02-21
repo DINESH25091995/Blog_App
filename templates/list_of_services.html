@@ -18,7 +18,10 @@
                     <tr>
                         <th>Service</th>
                         <th>Price</th>
-                        <th>Estimated Time Take</th>
+                        {% if current_user and current_user.id == shop.user_id %}
+                            <th>Estimated Time Take</th>
+                        {% endif %}
+                        
                     </tr>
                 </thead>
                 <tbody>

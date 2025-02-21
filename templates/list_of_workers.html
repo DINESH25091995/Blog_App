@@ -1,6 +1,6 @@
 <!-- For list of Workers -->
 {% if current_user and current_user.id == shop.user_id %}
-<h2>👷 List of Workers</h2>
+<h2>👷 List of Barber</h2>
 <div class="grid-container">
     {% for worker in shop.workers %}
         <div class="card">
@@ -45,7 +45,7 @@
 </div>
 
 {% else %}
-    <h2>👷 List of Workers</h2>
+    <h2>👷 List of Barber</h2>
     <div class="grid-container">
         {% for worker in shop.workers %}
             <div class="card">

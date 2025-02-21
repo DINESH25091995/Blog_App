@@ -17,10 +17,20 @@
                         <th>Booking Time</th>
                         <th>Date</th>
                         <th>Time</th>
-                        <th>Services</th>
-                        {% if current_user and current_user.id == shop.user_id %}
-                        <th>Cost</th>
-                        {% endif %}
+                        <th>Services</th> 
+
+                        {% set ns = namespace(show_cost=False) %}  <!-- ✅ Use a namespace variable -->
+
+                        <!-- ✅ First, Check If We Need to Show the Cost Column -->
+                        {% for app in appointments %}
+                            {% if current_user and (current_user.id == shop.user_id or current_user.id == app.user_id) %}
+                                {% set ns.show_cost = True %}
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if ns.show_cost %}
+                <th>Cost</th>  <!-- ✅ Now the column name will be displayed correctly -->
+            {% endif %}
                     </tr>
                 </thead>
                 <tbody>
@@ -42,8 +52,11 @@
                                     </ul>
                                 </td>
                                 <td>
-                                    {% if current_user and current_user.id == shop.user_id %}
+                                    <!-- {% if current_user and current_user.id == shop.user_id %}
                                     {{app.total_price}}
+                                    {% endif %} -->
+                                    {% if current_user and (current_user.id == shop.user_id or current_user.id == app.user_id) %}
+                                        ₹{{ app.total_price }}  <!-- ✅ Visible only to Shop Owner & User who booked -->
                                     {% endif %}
                                 </td>
                             </tr>

@@ -74,96 +74,239 @@ document.getElementById('worker').addEventListener('change', function() {
 });
 </script> -->
 
-
-<form method="post" action="/shops/{{ shop.id }}/book_appointment">
-    <label for="worker">Select Worker:</label>
-    <select name="worker_id" id="worker" required>
-        <option value="">-- Select Worker --</option>
-        {% for worker in shop.workers %}
-        <option value="{{ worker.id }}">{{ worker.user.username }}</option>
-        {% endfor %}
-    </select>
-
-    <label for="date">Select Date:</label>
-    <input type="date" name="date" id="date" required>
-
-    <label for="time">Select Time:</label>
-    <input type="time" name="time" id="time">
-    <input type="checkbox" name="prefer_earliest" id="prefer_earliest"> Book Earliest Available Slot
-
-    <label for="services">Select Services:</label>
-    <div id="services-list">
-        {% for worker in shop.workers %}
-        <div class="worker-services" data-worker="{{ worker.id }}" style="display: none;">
-            {% for service in worker.services %}
-            <input type="checkbox" name="selected_service_ids" value="{{ service.id }}"
-                data-price="{{ service.price }}"
-                data-duration="{{ service.duration_minutes }}"
-                data-name="{{ service.name }}">
-            {{ service.name }} - ₹{{ service.price }} ({{ service.duration_minutes }} mins)<br>
+<style>
+    /* ✅ Mobile-Friendly Styling */
+    body {
+        font-family: Arial, sans-serif;
+        padding: 10px;
+    }
+    
+    form {
+        max-width: 400px;  /* ✅ Limit form width for compact UI */
+        margin: auto;
+        background: #f8f8f8;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* ✅ Make labels & inputs more compact */
+    label {
+        font-weight: bold;
+        margin-top: 10px;
+        display: block;
+    }
+    
+    select, input {
+        width: 100%;
+        padding: 8px;
+        margin-top: 5px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+    
+    /* ✅ Services List: Scrollable and Compact */
+    #services-list {
+        max-height: 150px;
+        overflow-y: auto;
+        border: 1px solid #ddd;
+        padding: 5px;
+        border-radius: 5px;
+        background: #fff;
+    }
+    
+    /* ✅ Checkbox Alignment Fix */
+    .worker-services label {
+        display: flex;
+        align-items: center;
+        gap: 8px;  /* ✅ Adds a small gap between checkbox and text */
+        padding: 5px 0;
+    }
+    
+    /* ✅ Adjust Checkbox Size */
+    .worker-services input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+    }
+    
+    /* ✅ Cart Section: Scrollable */
+    #cart {
+        background: #fff;
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        max-height: 150px;
+        overflow-y: auto;
+    }
+    
+    #cart ul {
+        list-style: none;
+        padding: 0;
+    }
+    
+    #cart ul li {
+        font-size: 14px;
+        padding: 5px 0;
+        border-bottom: 1px solid #eee;
+    }
+    
+    /* ✅ Responsive Buttons */
+    button {
+        background: #007bff;
+        color: white;
+        padding: 10px;
+        border: none;
+        border-radius: 5px;
+        width: 100%;
+        margin-top: 10px;
+        cursor: pointer;
+    }
+    
+    button:hover {
+        background: #0056b3;
+    }
+    
+    /* ✅ Media Query for Small Screens */
+    @media (max-width: 480px) {
+        form {
+            padding: 10px;
+        }
+        select, input {
+            padding: 6px;
+        }
+        button {
+            padding: 8px;
+        }
+    }
+    </style>
+    
+    <form method="post" action="/shops/{{ shop.id }}/book_appointment">
+        <label for="worker">👷 Select Worker:</label>
+        <select name="worker_id" id="worker" required>
+            <option value="">-- Select Worker --</option>
+            {% for worker in shop.workers %}
+            <option value="{{ worker.id }}">{{ worker.user.username }}</option>
+            {% endfor %}
+        </select>
+    
+        <label for="date">📅 Select Date:</label>
+        <input type="date" name="date" id="date" required>
+    
+        <label for="time">⏰ Select Time:</label>
+        <input type="time" name="time" id="time">
+        <label><input type="checkbox" name="prefer_earliest" id="prefer_earliest"> Book Earliest Available Slot</label>
+    
+        <label for="services">🛠 Select Services:</label>
+        <div id="services-list">
+            {% for worker in shop.workers %}
+            <div class="worker-services" data-worker="{{ worker.id }}" style="display: none;">
+                {% for service in worker.services %}
+                <label>
+                    <input type="checkbox" name="selected_service_ids" value="{{ service.id }}"
+                        data-price="{{ service.price }}"
+                        data-duration="{{ service.duration_minutes }}"
+                        data-name="{{ service.name }}">
+                    {{ service.name }} - ₹{{ service.price }} ({{ service.duration_minutes }} mins)
+                </label>
+                {% endfor %}
+            </div>
             {% endfor %}
         </div>
-        {% endfor %}
-    </div>
-
-    <h3>Cart</h3>
-    <div id="cart">
-        <ul id="cart-items"></ul>
-        <p>Total Price: ₹<span id="total-price">0</span></p>
-        <p>Total Duration: <span id="total-duration">0</span> minutes</p>
-    </div>
-
-    <label for="payment_method">Payment Method:</label>
-    <select name="payment_method" required>
-        <option value="cash">In Cash</option>
-    </select>
-
-    <button type="submit">Proceed to Book Appointment</button>
-</form>
-
-<script>
-document.getElementById('worker').addEventListener('change', function() {
-    var selectedWorker = this.value;
-    document.querySelectorAll('.worker-services').forEach(div => div.style.display = 'none');
-    document.querySelector('[data-worker="' + selectedWorker + '"]').style.display = 'block';
-});
-
-let cart = {};
-let totalPrice = 0;
-let totalDuration = 0;
-
-document.querySelectorAll('[name="selected_service_ids"]').forEach(checkbox => {
-    checkbox.addEventListener('change', function() {
-        let serviceId = this.value;
-        let serviceName = this.dataset.name;
-        let servicePrice = parseFloat(this.dataset.price);
-        let serviceDuration = parseInt(this.dataset.duration);
-
-        if (this.checked) {
-            cart[serviceId] = { name: serviceName, price: servicePrice, duration: serviceDuration };
-            totalPrice += servicePrice;
-            totalDuration += serviceDuration;
-        } else {
-            delete cart[serviceId];
-            totalPrice -= servicePrice;
-            totalDuration -= serviceDuration;
+    
+        <h3>🛒 Cart</h3>
+        <div id="cart">
+            <ul id="cart-items"></ul>
+            <p><strong>Total Price:</strong> ₹<span id="total-price">0</span></p>
+            <p><strong>Total Duration:</strong> <span id="total-duration">0</span> minutes</p>
+        </div>
+    
+        <label for="payment_method">💰 Payment Method:</label>
+        <select name="payment_method" required>
+            <option value="cash">In Cash</option>
+        </select>
+    
+        <button type="submit">✅ Book Appointment</button>
+    </form>
+    
+    <script>
+    document.getElementById('worker').addEventListener('change', function() {
+        var selectedWorker = this.value;
+        document.querySelectorAll('.worker-services').forEach(div => div.style.display = 'none');
+    
+        let workerServices = document.querySelector('[data-worker="' + selectedWorker + '"]');
+        if (workerServices) {
+            workerServices.style.display = 'block';
         }
-        
+    
+        // ✅ Reset Cart on Worker Change
+        resetCart();
+    });
+    
+    let cart = {};
+    let totalPrice = 0;
+    let totalDuration = 0;
+    
+    // ✅ Event Listener for Service Selection
+    document.querySelectorAll('[name="selected_service_ids"]').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            let serviceId = this.value;
+            let serviceName = this.dataset.name;
+            let servicePrice = parseFloat(this.dataset.price);
+            let serviceDuration = parseInt(this.dataset.duration);
+    
+            if (this.checked) {
+                cart[serviceId] = { name: serviceName, price: servicePrice, duration: serviceDuration };
+                totalPrice += servicePrice;
+                totalDuration += serviceDuration;
+            } else {
+                delete cart[serviceId];
+                totalPrice -= servicePrice;
+                totalDuration -= serviceDuration;
+            }
+            
+            updateCart();
+        });
+    });
+    
+    // ✅ Function to Update Cart
+    function updateCart() {
+        let cartList = document.getElementById("cart-items");
+        cartList.innerHTML = "";
+    
+        Object.values(cart).forEach(item => {
+            let li = document.createElement("li");
+            li.textContent = `${item.name} - ₹${item.price} (${item.duration} mins)`;
+            cartList.appendChild(li);
+        });
+    
+        document.getElementById("total-price").textContent = totalPrice.toFixed(2);
+        document.getElementById("total-duration").textContent = totalDuration;
+    }
+    
+    // ✅ Function to Reset Cart When Worker is Changed
+    function resetCart() {
+        cart = {};
+        totalPrice = 0;
+        totalDuration = 0;
         updateCart();
-    });
-});
-
-function updateCart() {
-    let cartList = document.getElementById("cart-items");
-    cartList.innerHTML = "";
-
-    Object.values(cart).forEach(item => {
-        let li = document.createElement("li");
-        li.textContent = `${item.name} - ₹${item.price} (${item.duration} mins)`;
-        cartList.appendChild(li);
-    });
-
-    document.getElementById("total-price").textContent = totalPrice.toFixed(2);
-    document.getElementById("total-duration").textContent = totalDuration;
-}
-</script>
+    }
+    
+    // ✅ Auto-Update Available Time when Worker or Date is Selected
+    document.getElementById('worker').addEventListener('change', updateAvailableTime);
+    document.getElementById('date').addEventListener('change', updateAvailableTime);
+    
+    function updateAvailableTime() {
+        let workerId = document.getElementById('worker').value;
+        let selectedDate = document.getElementById('date').value;
+    
+        if (!workerId || !selectedDate) return;
+    
+        fetch(`/shops/{{ shop.id }}/available_time?worker_id=${workerId}&date=${selectedDate}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('time').value = data.available_time;
+            })
+            .catch(error => console.error('Error fetching available time:', error));
+    }
+    </script>
+    
