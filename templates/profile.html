@@ -43,21 +43,48 @@
         </div>
     </div>
 
+
+
+    
     <!-- Appointments Section -->
     <div class="appointments-section">
         <h2>📅 List of Appointments</h2>
-        <ul>
-            {% for appointment in appointments %}
-                <li>
-                    <a href="/blogs/{{ appointment.id }}">
-                        🗓️ {{ appointment.date }} at {{ appointment.time }}
-                    </a>
-                </li>
-            {% else %}
-                <li>No appointments found.</li>
-            {% endfor %}
-        </ul>
+        <table style="border-collapse: collapse; width: 70%;" border="1">
+            <thead>
+                <tr>
+                    <th>Shop Name</th>
+                    <th>Worker Name</th>
+                    <th>Booking Time</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Services</th>
+                   
+                </tr>
+            </thead>
+            <tbody>
+                {% for app in appointments %}
+                    <tr>
+                        <td>{{app.shop.shop_name}}</td>
+                        <td>{{ app.worker.user.username }}</td>
+                        <td>{{ app.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td>{{ app.date }}</td>
+                        <td>{{ app.time }}</td>
+                        <td>
+                            <ul>
+                                {% for service in app.services %}
+                                    <li>✅ {{ service.name }}</li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+            
     </div>
+
+
+
 
     <!-- User's Blogs Section -->
     <div class="blogs-section">

@@ -1,9 +1,9 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Login</title>
-</head>
-<body>
+{% extends "base.html" %}
+{% block content %}
+
+<link rel="stylesheet" href="{{ url_for('static', path='css/login.css') }}">
+
+<div class="container">
     <h2>Login</h2>
     <form action="/auth/login" method="post">
         <label>Email or Mobile:</label>
@@ -12,5 +12,7 @@
         <input type="password" name="password" required>
         <button type="submit">Login</button>
     </form>
-</body>
-</html>
+</div>
+    
+
+{% endblock %}
