@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Form, Request, Depends, UploadFile, File
+from fastapi import APIRouter, Form, Request, Depends, UploadFile, File, HTTPException
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
@@ -12,9 +12,6 @@ import pytz
 from fastapi import Query
 from sqlalchemy.sql import func, and_
 
-
-
-
 from routers.auth import get_current_user
 
 router = APIRouter()
@@ -22,6 +19,9 @@ templates = Jinja2Templates(directory="templates")
 
 SHOP_DIR = "static/uploads/shopprofile"
 os.makedirs(SHOP_DIR, exist_ok=True)  # Create directory if not exists
+
+# ✅ IST Timezone
+IST = pytz.timezone("Asia/Kolkata")
 
 @router.get("/")
 def list_shops(request: Request, db: Session = Depends(get_db)):
@@ -72,13 +72,17 @@ async def create_shop(request: Request,
 def shop_detail(request: Request, 
                 shop_id: int, 
                 view_all: bool = Query(False),  # Flag to show full history
+                date_filter: str = Query(None),
                 db: Session = Depends(get_db)):
     shop = db.query(Shop).filter(Shop.id == shop_id).first()
     users = db.query(User).all()  # Fetch all users for the dropdown
     user = request.session.get("user")
     
-    today_date = datetime.now().strftime('%Y-%m-%d')  # Get today's date
+    today_date = datetime.now(IST).strftime('%Y-%m-%d')  # Get today's date
     
+    # ✅ Use `date_filter` if provided, otherwise default to today
+    selected_date = date_filter if date_filter else today_date
+
     query = (
     db.query(Appointment)
     .join(Worker)
@@ -86,7 +90,7 @@ def shop_detail(request: Request,
     .filter(Appointment.shop_id == shop_id))
 
     if not view_all:
-        query = query.filter(Appointment.date == today_date)  # Show only today's appointments
+        query = query.filter(Appointment.date == selected_date)  # Show only today's appointments
 
     appointments = query.all()
 
@@ -99,11 +103,13 @@ def shop_detail(request: Request,
     # .all())
 
     # appointments = db.query(Appointment).filter(Appointment.user_id == user["id"]).all()
-    return templates.TemplateResponse("shop_detail.html", {"request": request, "shop": shop, "current_user": user, "users": users,"appointments":appointments})
+    return templates.TemplateResponse("shop_detail.html", {"request": request, "shop": shop, 
+                                    "current_user": user, "users": users,"appointments":appointments,
+                                    "selected_date": selected_date})
 
 
 @router.post("/delete/{shop_id}")
-def delete_blog(shop_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def delete_shop(shop_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
     shop = db.query(Shop).filter(Shop.id == shop_id).first()
 
     if not shop:
@@ -112,7 +118,17 @@ def delete_blog(shop_id: int, db: Session = Depends(get_db), user=Depends(get_cu
     if shop.user_id != user["id"]:
         raise HTTPException(status_code=403, detail="You are not allowed to delete this blog")
 
-    db.delete(shop)
+    # db.delete(shop)
+    # db.commit()
+    # Delete all workers associated with the shop
+    db.query(Worker).filter(Worker.shop_id == shop_id).delete(synchronize_session=False)
+
+    # Delete all appointments related to the shop
+    db.query(Appointment).filter(Appointment.shop_id == shop_id).delete(synchronize_session=False)
+
+    # Delete the shop itself
+    db.query(Shop).filter(Shop.id == shop_id).delete(synchronize_session=False)
+
     db.commit()
 
     return RedirectResponse(url="/shops", status_code=303)
@@ -340,10 +356,9 @@ def set_shop_schedule(
     if open_time and close_time :
         shop.open_time = open_time
         shop.close_time = close_time
-        
+    
     shop.is_open = is_open
         
-
     db.commit()
     return RedirectResponse(url=f"/shops/{shop_id}", status_code=303)
 
@@ -353,7 +368,7 @@ def get_next_available_time(db, worker_id, date, shop_open_time):
     
     # Ensure shop_open_time is a time object
     shop_open = shop_open_time if isinstance(shop_open_time, time) else datetime.strptime(shop_open_time, "%H:%M").time()
-
+    
     # Fetch all existing appointments for the worker
     appointments = (
         db.query(Appointment)
@@ -362,10 +377,15 @@ def get_next_available_time(db, worker_id, date, shop_open_time):
         .all()
     )
 
-    available_time = shop_open
+    current_ist = datetime.now(IST).time()
+    available_time = max(shop_open, current_ist) if date == datetime.now(IST).date().isoformat() else shop_open
+
+    # Convert available_time to a datetime object for easy comparison
+    available_datetime = datetime.combine(datetime.today(), available_time)
 
     for appointment in appointments:
         start_time = datetime.strptime(appointment.time, "%H:%M").time()
+        start_datetime = datetime.combine(datetime.today(), start_time)
 
         # ✅ Correctly calculate the end time of this appointment
         appointment_duration = (
@@ -375,13 +395,18 @@ def get_next_available_time(db, worker_id, date, shop_open_time):
             .scalar()
         ) or 0
 
-        end_time = (datetime.combine(datetime.today(), start_time) + timedelta(minutes=appointment_duration)).time()
+        # end_time = (datetime.combine(datetime.today(), start_time) + timedelta(minutes=appointment_duration)).time()
+        end_datetime = start_datetime + timedelta(minutes=appointment_duration)
 
-        # Move available time forward if it's occupied
-        if available_time < end_time:
-            available_time = end_time
+        if available_datetime + timedelta(minutes=appointment_duration) <= start_datetime:
+            return available_datetime.time()
 
-    return available_time  # ✅ Return as time object (not string)
+        # Move available time forward if this slot is occupied
+        available_datetime = end_datetime
+
+    # return available_time  # ✅ Return as time object (not string)
+    # If no gaps found, return the next available time after the last appointment
+    return available_datetime.time()
 
 
 @router.post("/{shop_id}/book_appointment")
@@ -405,6 +430,21 @@ def book_appointment(
     shop_open_time = datetime.strptime(shop.open_time, "%H:%M").time()
     shop_close_time = datetime.strptime(shop.close_time, "%H:%M").time()
 
+    # ✅ Get current IST time
+    current_time_ist = datetime.now(IST).time()
+
+    # ✅ Restrict booking dates to only today or tomorrow
+    today = datetime.now(IST).date()
+    tomorrow = today + timedelta(days=1)
+
+    if date not in [today.isoformat(), tomorrow.isoformat()]:
+        raise HTTPException(status_code=400, detail="You can only book for today or tomorrow.")
+
+    # ✅ Ensure booking only within shop hours
+    if date == today.isoformat() and current_time_ist > shop_close_time:
+        raise HTTPException(status_code=400, detail="Shop is closed for today, try tomorrow.")
+
+
     # ✅ Calculate total duration of selected services
     total_duration = (
         db.query(func.sum(Service.duration_minutes))
@@ -421,6 +461,10 @@ def book_appointment(
     # ✅ Ensure booking time is within shop hours
     if booking_time < shop_open_time or booking_time > shop_close_time:
         raise HTTPException(status_code=400, detail="Appointment time must be within shop hours.")
+
+    if date == today.isoformat() and booking_time < current_time_ist:
+        raise HTTPException(status_code=400, detail="Cannot book a past time.")
+
 
     # ✅ Check for overlapping appointments
     existing_appointments = db.query(Appointment).filter(
@@ -445,12 +489,16 @@ def book_appointment(
         if start_time <= booking_time < end_time:
             raise HTTPException(status_code=400, detail="Selected time is already booked. Try another time.")
 
-    # ✅ Calculate end time
-    start_time_obj = datetime.combine(datetime.today(), booking_time)
-    end_time_obj = start_time_obj + timedelta(minutes=total_duration)
-    end_time = end_time_obj.time()
+    # # ✅ Calculate end time
+    # start_time_obj = datetime.combine(datetime.today(), booking_time)
+    # end_time_obj = start_time_obj + timedelta(minutes=total_duration)
+    # end_time = end_time_obj.time()
 
-    # ✅ Ensure appointment doesn't exceed shop closing time
+    # # ✅ Ensure appointment doesn't exceed shop closing time
+    # if end_time > shop_close_time:
+    #     raise HTTPException(status_code=400, detail="Services extend beyond shop closing time.")
+     # ✅ Ensure appointment does not exceed shop closing time
+    end_time = (datetime.combine(datetime.today(), booking_time) + timedelta(minutes=total_duration)).time()
     if end_time > shop_close_time:
         raise HTTPException(status_code=400, detail="Services extend beyond shop closing time.")
 
@@ -461,9 +509,9 @@ def book_appointment(
         .scalar()
     ) or 0.0
 
-    # ✅ Convert current time to IST (Indian Standard Time)
-    ist_timezone = pytz.timezone("Asia/Kolkata")
-    created_at_ist = datetime.now(pytz.utc).astimezone(ist_timezone)
+    # # ✅ Convert current time to IST (Indian Standard Time)
+    # ist_timezone = pytz.timezone("Asia/Kolkata")
+    # created_at_ist = datetime.now(pytz.utc).astimezone(ist_timezone)
 
     # ✅ Create and save the appointment
     appointment = Appointment(
@@ -473,7 +521,7 @@ def book_appointment(
         date=date,
         time=booking_time.strftime("%H:%M"),  # Convert time object to string before storing
         total_price=total_price,
-        created_at=created_at_ist,
+        created_at=datetime.now(IST),
     )
 
     db.add(appointment)
@@ -490,3 +538,116 @@ def book_appointment(
 
     # return {"message": "Appointment booked successfully", "appointment_time": booking_time.strftime("%H:%M")}
     return RedirectResponse(url=f"/shops/{shop_id}", status_code=303)
+
+
+@router.get("/{shop_id}/available_time")
+def get_available_time_slots(shop_id: int, worker_id: int, date: str, db: Session = Depends(get_db)):
+    """Finds the available time slots for a worker on a given date."""
+    
+    # Convert date string to date object
+    date = datetime.strptime(date, "%Y-%m-%d").date()
+
+    # Fetch shop details
+    shop = db.query(Shop).filter(Shop.id == shop_id).first()
+    if not shop:
+        return {"error": "Shop not found."}
+
+    # Convert shop opening and closing times
+    shop_open_time = datetime.combine(date, datetime.strptime(shop.open_time, "%H:%M").time())
+    shop_close_time = datetime.combine(date, datetime.strptime(shop.close_time, "%H:%M").time())
+
+    # Fetch all existing appointments for the worker
+    appointments = (
+        db.query(Appointment)
+        .filter(Appointment.worker_id == worker_id, Appointment.date == date)
+        .order_by(Appointment.time.asc())
+        .all()
+    )
+
+    # Get current time in IST
+    current_ist = datetime.now(IST).time()
+    
+    # Ensure available time starts correctly
+    available_time = max(shop_open_time, datetime.combine(date, current_ist)) if date == datetime.now(IST).date() else shop_open_time
+
+    available_slots = []
+    
+    for appointment in appointments:
+        start_time = datetime.strptime(appointment.time, "%H:%M").time()
+        start_datetime = datetime.combine(date, start_time)
+
+        # Get appointment duration
+        appointment_duration = (
+            db.query(func.sum(Service.duration_minutes))
+            .join(appointment_services)
+            .filter(appointment_services.c.appointment_id == appointment.id)
+            .scalar()
+        ) or 0
+
+        end_datetime = start_datetime + timedelta(minutes=appointment_duration)
+
+        
+        # If there's a gap before this appointment, add it to available slots
+        if available_time < start_datetime:
+            available_slots.append([
+                available_time.strftime("%H:%M"),
+                start_datetime.strftime("%H:%M")
+            ])
+
+        # Move available time to after this appointment
+        available_time = end_datetime
+
+    current_ist_date = datetime.now(IST).date()
+    # If there's free time after the last appointment, add it
+    if available_time < shop_close_time:
+        if date == current_ist_date:
+            if (current_ist.strftime("%H:%M") < shop_close_time.strftime("%H:%M")) and (current_ist.strftime("%H:%M") > available_time.strftime("%H:%M")):
+                available_slots.append([
+                    current_ist.strftime("%H:%M"),
+                    shop_close_time.strftime("%H:%M")
+                ])
+            else:
+                available_slots.append([
+                available_time.strftime("%H:%M"),
+                shop_close_time.strftime("%H:%M")
+            ])
+        else:
+            available_slots.append([
+                available_time.strftime("%H:%M"),
+                shop_close_time.strftime("%H:%M")
+            ])
+
+        # available_slots.append([
+        #         available_time.strftime("%H:%M"),
+        #         shop_close_time.strftime("%H:%M")
+        #     ])
+
+    return {"available_slots": available_slots}
+
+
+
+@router.put("/appointments/{appointment_id}/status")
+def update_appointment_status(request: Request,
+    appointment_id: int,
+    db: Session = Depends(get_db),
+    owner=Depends(get_current_user)
+):
+    """Allows shop owners to mark an appointment as 'Done'."""
+    
+    # Fetch appointment
+    appointment = db.query(Appointment).filter(Appointment.id == appointment_id).first()
+
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Appointment not found.")
+
+    # Check if the user is the shop owner
+    if owner["id"] != appointment.shop.user_id:
+        raise HTTPException(status_code=403, detail="Only shop owners can update appointment status.")
+
+    # Update status if it's "Queue"
+    if appointment.status == "Queue":
+        appointment.status = "Done"
+        db.commit()
+        db.refresh(appointment)
+
+    return {"message": "Appointment marked as Done"}

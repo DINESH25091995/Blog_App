@@ -1,11 +1,21 @@
 <!-- For list of Appointment -->
 <h2> 📅 List of Appointments</h2>
+    <div class="controls">
         <!-- "View More" Button -->
         {% if view_all %}
-            <button onclick="toggleView(false)">🔙 Show Today's Appointments</button>
+            <button class="small-btn" onclick="toggleView(false)">🔙 Show Today's</button>
         {% else %}
-            <button onclick="toggleView(true)">📜 View More</button>
+            <button class="small-btn" onclick="toggleView(true)">📜 View All Appointment</button>
         {% endif %}
+
+        <!-- Date Filter -->
+        <form method="get" action="" class="date-filter-form">
+            <label for="dateFilter">📅</label>
+            <input type="date" id="dateFilter" name="date_filter" value="{{ selected_date }}">
+            <button type="submit" class="small-btn">🔍</button>
+        </form>
+    </div>
+
         {% for worker in shop.workers %}
         <div class="card">
             <h3>👷 Worker: {{ worker.user.username }}</h3>
@@ -30,6 +40,10 @@
 
                         {% if ns.show_cost %}
                             <th>Cost</th>  <!-- ✅ Now the column name will be displayed correctly -->
+                        {% endif %}
+
+                        {% if current_user.id == shop.user_id %}
+                            <th>Status</th>
                         {% endif %}
                     </tr>
                 </thead>
@@ -59,6 +73,25 @@
                                         ₹{{ app.total_price }}  <!-- ✅ Visible only to Shop Owner & User who booked -->
                                     {% endif %}
                                 </td>
+                                
+                                <!-- <td>
+                                    {% if current_user.id == shop.user_id %}
+                                        {% if app.status == "Queue" %}
+                                            <button class="status-btn" onclick="markAsDone({{ app.id }})"> Done</button>
+                                        {% else %}
+                                            Done
+                                        {% endif %}
+                                    {% endif %}
+                                </td> -->
+                                <td id="status-{{ app.id }}">
+                                    {{ app.status }}
+                                    {% if current_user.id == shop.user_id and app.status == "Queue" %}
+                                        <button class="status-btn" id="btn-{{ app.id }}" onclick="markAsDone({{ app.id }})">
+                                            ✔ Mark as Done
+                                        </button>
+                                    {% endif %}
+                                </td>
+                                                                                                
                             </tr>
                         {% endif %}
                     {% endfor %}
@@ -95,4 +128,104 @@
     function toggleView(viewAll) {
         window.location.href = `?view_all=${viewAll}`;
     }
+
+    function toggleView(viewAll) {
+        let selectedDate = document.getElementById("dateFilter").value;
+        window.location.href = `?view_all=${viewAll}&date_filter=${selectedDate}`;
+    }
+
+    
+    function markAsDone(appointmentId) {
+    fetch(`/shops/appointments/${appointmentId}/status`, {  // ✅ Ensure correct API endpoint
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json",
+        },
+    })
+    .then((response) => {
+        if (!response.ok) {
+            return response.json().then((err) => {
+                throw new Error(err.detail || "Unknown error occurred");
+            });
+        }
+        return response.json();
+    })
+    .then((data) => {
+        alert(data.message);  // ✅ Show success message
+
+        // ✅ Update status text
+        document.getElementById(`status-${appointmentId}`).innerHTML = "Done";
+
+        // ✅ Remove button after marking as Done
+        let button = document.getElementById(`btn-${appointmentId}`);
+        if (button) {
+            button.remove();
+        }
+    })
+    .catch((error) => {
+        alert("Error: " + error.message);
+    });
+}
+
+
 </script>
+
+<!-- CSS for Styling -->
+<style>
+    /* 📌 Header container with flexbox */
+    .header-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+
+    /* 📌 Align buttons & form inline */
+    .controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    /* 📌 Compact buttons */
+    .small-btn {
+        font-size: 12px;
+        padding: 5px 10px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    .small-btn:hover {
+        background-color: #0056b3;
+    }
+
+    /* 📌 Compact date filter */
+    .date-filter-form {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .date-filter-form input[type="date"] {
+        padding: 3px;
+        font-size: 12px;
+    }
+
+    .status-btn {
+        background-color: #28a745;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        cursor: pointer;
+        border-radius: 5px;
+    }
+
+    .status-btn:hover {
+        background-color: #218838;
+    }
+</style>
+
+

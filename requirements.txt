@@ -23,6 +23,7 @@ pyjwt
 bcrypt 
 python-multipart
 databases
+geopy
 
 
 

@@ -65,7 +65,13 @@
                 {% for app in appointments %}
                     <tr>
                         <td>{{app.shop.shop_name}}</td>
-                        <td>{{ app.worker.user.username }}</td>
+                        <td>
+                            {% if app.worker and app.worker.user %}
+                                {{ app.worker.user.username }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>                        
                         <td>{{ app.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                         <td>{{ app.date }}</td>
                         <td>{{ app.time }}</td>
