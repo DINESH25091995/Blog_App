@@ -1,0 +1,218 @@
+document.getElementById('worker').addEventListener('change', function() {
+    var selectedWorker = this.value;
+    document.querySelectorAll('.worker-services').forEach(div => div.style.display = 'none');
+
+    let workerServices = document.querySelector('[data-worker="' + selectedWorker + '"]');
+    if (workerServices) {
+        workerServices.style.display = 'block';
+    }
+
+    // ✅ Reset Cart on Worker Change
+    resetCart();
+});
+
+let cart = {};
+let totalPrice = 0;
+let totalDuration = 0;
+
+// ✅ Event Listener for Service Selection
+document.querySelectorAll('[name="selected_service_ids"]').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+        let serviceId = this.value;
+        let serviceName = this.dataset.name;
+        let servicePrice = parseFloat(this.dataset.price);
+        let serviceDuration = parseInt(this.dataset.duration);
+
+        if (this.checked) {
+            cart[serviceId] = { name: serviceName, price: servicePrice, duration: serviceDuration };
+            totalPrice += servicePrice;
+            totalDuration += serviceDuration;
+        } else {
+            delete cart[serviceId];
+            totalPrice -= servicePrice;
+            totalDuration -= serviceDuration;
+        }
+        
+        updateCart();
+    });
+});
+
+// ✅ Function to Update Cart
+function updateCart() {
+    let cartList = document.getElementById("cart-items");
+    cartList.innerHTML = "";
+
+    Object.values(cart).forEach(item => {
+        let li = document.createElement("li");
+        li.textContent = `${item.name} - ₹${item.price} (${item.duration} mins)`;
+        cartList.appendChild(li);
+    });
+
+    document.getElementById("total-price").textContent = totalPrice.toFixed(2);
+    document.getElementById("total-duration").textContent = totalDuration;
+}
+
+// ✅ Function to Reset Cart When Worker is Changed
+function resetCart() {
+    cart = {};
+    totalPrice = 0;
+    totalDuration = 0;
+    updateCart();
+}
+
+// ✅ Auto-Update Available Time when Worker or Date is Selected
+// document.getElementById('worker').addEventListener('change', updateAvailableTime);
+// document.getElementById('date').addEventListener('change', updateAvailableTime);
+document.addEventListener("DOMContentLoaded", function () {
+        setDateLimits();
+        updateAvailableTime();
+    });
+
+    function setDateLimits() {
+        let today = new Date();
+        let tomorrow = new Date();
+        tomorrow.setDate(today.getDate() + 1);
+
+        let todayStr = today.toISOString().split("T")[0];
+        let tomorrowStr = tomorrow.toISOString().split("T")[0];
+
+        let dateInput = document.getElementById("date");
+        dateInput.min = todayStr;
+        dateInput.max = tomorrowStr;
+
+        let shopOpen = "09:00";  
+        let shopClose = "21:00";  
+        let now = new Date();
+        let currentTime = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+
+        if (currentTime > shopClose) {
+            dateInput.disabled = true;
+            document.getElementById("submitBtn").disabled = true;
+            alert("Shop is closed for today. Please select tomorrow.");
+        }
+    }
+// function updateAvailableTime() {
+//         let workerId = document.getElementById('worker').value;
+//         let selectedDate = document.getElementById('date').value;
+        
+//         if (!workerId || !selectedDate) return;
+
+//         fetch(`/shops/{{ shop.id }}/available_time?worker_id=${workerId}&date=${selectedDate}`)
+//             .then(response => response.json())
+//             .then(data => {
+//                 let timeInput = document.getElementById('time');
+//                 timeInput.value = data.available_time;
+//                 timeInput.min = data.available_time;
+//                 timeInput.max = "21:00";
+//             })
+//             .catch(error => console.error('Error fetching available time:', error));
+//     }
+
+function updateAvailableTime() {
+let workerId = document.getElementById('worker').value;
+let selectedDate = document.getElementById('date').value;
+
+if (!workerId || !selectedDate) return;
+
+fetch(`/shops/{{ shop.id }}/available_time?worker_id=${workerId}&date=${selectedDate}`)
+    .then(response => response.json())
+    .then(data => {
+        let slotsContainer = document.getElementById('available-slots');
+        slotsContainer.innerHTML = "";
+
+        if (data.available_slots.length === 0) {
+            slotsContainer.innerHTML = "<span style='color: red;'>❌ No available slots.</span>";
+            return;
+        }
+
+        let slotHTML = "<strong>✅ Available Slots:</strong> ";
+        data.available_slots.forEach(slot => {
+            slotHTML += `⏳<span style="color: blue;">${slot[0]} - ${slot[1]}</span>`;
+        });
+
+        slotsContainer.innerHTML = slotHTML;
+
+        // // Set the first available time as default
+        // document.getElementById('time').value = data.available_slots[0][0];
+        // document.getElementById('time').min = data.available_slots[0][0];
+        // document.getElementById('time').max = data.available_slots[data.available_slots.length - 1][1];
+    })
+    .catch(error => console.error('Error fetching available time:', error));
+}
+
+
+function toggleTimeInput() {
+        let preferEarliest = document.getElementById('prefer_earliest').checked;
+        document.getElementById('time').disabled = preferEarliest;
+    }
+
+
+document.addEventListener("DOMContentLoaded", function () {
+setDateLimits();
+});
+
+function setDateLimits() {
+    let today = new Date();
+    let tomorrow = new Date();
+    tomorrow.setDate(today.getDate() + 1);
+
+    let todayStr = today.toISOString().split("T")[0];
+    let tomorrowStr = tomorrow.toISOString().split("T")[0];
+
+    document.getElementById("date").min = todayStr;
+    document.getElementById("date").max = tomorrowStr;
+}
+
+// function setDateLimits() {
+//     let now = new Date();
+
+//     // Convert to IST (UTC+5:30)
+//     let istOffset = 5.5 * 60 * 60 * 1000; // IST Offset in milliseconds
+//     let istNow = new Date(now.getTime() + istOffset);
+
+//     let tomorrow = new Date(istNow);
+//     tomorrow.setDate(istNow.getDate() + 1);
+
+//     let todayStr = istNow.toISOString().split("T")[0];  
+//     let tomorrowStr = tomorrow.toISOString().split("T")[0];
+
+//     document.getElementById("date").min = todayStr;
+//     document.getElementById("date").max = tomorrowStr;
+
+//     let shopOpenTime = "09:00";  
+//     let shopCloseTime = "21:00";  
+
+//     let currentISTTime = istNow.getHours().toString().padStart(2, '0') + ":" + istNow.getMinutes().toString().padStart(2, '0');
+
+//     if (currentISTTime > shopCloseTime) {
+//         document.getElementById("date").disabled = true;
+//         alert("Shop is closed for today. Please select tomorrow.");
+//     }
+// }
+
+
+function validateTime() {
+    let dateInput = document.getElementById("date").value;
+    let timeInput = document.getElementById("time");
+    let now = new Date();
+    
+    let shopOpenTime = "09:00";  // Replace with actual shop opening time
+    let shopCloseTime = "21:00"; // Replace with actual shop closing time
+    
+    let minTime = shopOpenTime;
+    
+    if (dateInput === now.toISOString().split("T")[0]) {
+        let currentTime = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+        minTime = currentTime > shopOpenTime ? currentTime : shopOpenTime;
+    }
+
+    timeInput.min = minTime;
+    timeInput.max = shopCloseTime;
+    
+    if (timeInput.value && (timeInput.value < minTime || timeInput.value > shopCloseTime)) {
+        alert("Please select a valid time within shop hours.");
+        timeInput.value = "";
+    }
+}
+
+document.getElementById("time").addEventListener("change", validateTime);

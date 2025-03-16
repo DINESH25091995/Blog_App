@@ -52,15 +52,17 @@ def register(
     password: str = Form(...),
     db: Session = Depends(get_db),
 ):
+    # Convert empty mobile number to None
+    mobile = mobile if mobile else None
     # Check if email already exists
     existing_user = db.query(User).filter(User.email == email).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered!")
 
     # Check if mobile number already exists (optional)
-    existing_mobile = db.query(User).filter(User.mobile == mobile).first()
-    if existing_mobile:
-        raise HTTPException(status_code=400, detail="Mobile number already registered!")
+    # existing_mobile = db.query(User).filter(User.mobile == mobile).first()
+    # if existing_mobile:
+    #     raise HTTPException(status_code=400, detail="Mobile number already registered!")
 
     hashed_password = pwd_context.hash(password)
 

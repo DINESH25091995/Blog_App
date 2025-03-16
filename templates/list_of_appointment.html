@@ -73,23 +73,13 @@
                                         ₹{{ app.total_price }}  <!-- ✅ Visible only to Shop Owner & User who booked -->
                                     {% endif %}
                                 </td>
-                                
-                                <!-- <td>
-                                    {% if current_user.id == shop.user_id %}
-                                        {% if app.status == "Queue" %}
-                                            <button class="status-btn" onclick="markAsDone({{ app.id }})"> Done</button>
-                                        {% else %}
-                                            Done
-                                        {% endif %}
-                                    {% endif %}
-                                </td> -->
                                 <td id="status-{{ app.id }}">
                                     {{ app.status }}
                                     {% if current_user.id == shop.user_id and app.status == "Queue" %}
-                                        <button class="status-btn" id="btn-{{ app.id }}" onclick="markAsDone({{ app.id }})">
-                                            ✔ Mark as Done
-                                        </button>
+                                        <button class="status-btn" id="btn-{{ app.id }}" onclick="markAsDone({{ app.id }})">Done</button>
+                                        <button class="status-btn" id="btn-{{ app.id }}" onclick="SendNotification({{ app.id }})">Notify</button>
                                     {% endif %}
+                                    
                                 </td>
                                                                                                 
                             </tr>
@@ -105,23 +95,6 @@
         </div>
     {% endfor %}
 
-        <!-- {% for worker in shop.workers %}
-            <h3>Worker: {{ worker.user.username }}</h3>
-            <ul>
-                {% for app in appointments %}
-                    {% if app.worker_id == worker.id %}
-                        <li>
-                            <strong>Client:</strong> {{ app.user.username }} <br>
-                            <strong>Date:</strong> {{ app.date }} <br>
-                            <strong>Time:</strong> {{ app.time }} <br>
-                        </li>
-                    {% endif %}
-                {% endfor %}
-            </ul>
-            {% if not worker.appointments %}
-                <p>No appointments for this worker</p>
-            {% endif %}
-        {% endfor %} -->
 
 <!-- JavaScript to Toggle Between Today & History -->
 <script>
@@ -161,6 +134,30 @@
         if (button) {
             button.remove();
         }
+    })
+    .catch((error) => {
+        alert("Error: " + error.message);
+    });
+}
+
+    function SendNotification(appointmentId) {
+    fetch(`/shops/appointments/${appointmentId}/notification`, {  // ✅ Ensure correct API endpoint
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json",
+        },
+    })
+    .then((response) => {
+        if (!response.ok) {
+            return response.json().then((err) => {
+                throw new Error(err.detail || "Unknown error occurred");
+            });
+        }
+        return response.json();
+    })
+    .then((data) => {
+        alert(data.message);  // ✅ Show success message
+
     })
     .catch((error) => {
         alert("Error: " + error.message);

@@ -13,6 +13,7 @@ from fastapi import Query
 from sqlalchemy.sql import func, and_
 
 from routers.auth import get_current_user
+from .utils import send_email
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -410,7 +411,7 @@ def get_next_available_time(db, worker_id, date, shop_open_time):
 
 
 @router.post("/{shop_id}/book_appointment")
-def book_appointment(
+def book_appointment(request: Request,
     shop_id: int,
     worker_id: int = Form(...),
     date: str = Form(...),
@@ -418,10 +419,13 @@ def book_appointment(
     selected_service_ids: list[int] = Form(...),
     prefer_earliest: bool = Form(False),  # ✅ Option to book earliest available slot
     db: Session = Depends(get_db),
-    user: dict = Depends(get_current_user),
+    user = Depends(get_current_user)
 ):
     """Handles appointment booking with custom time selection or earliest available slot."""
-    
+    print(f"======{user}")
+    if not user["id"]:
+        return RedirectResponse(url="/auth/login", status_code=303)
+
     shop = db.query(Shop).filter(Shop.id == shop_id).first()
     if not shop or not shop.is_open:
         raise HTTPException(status_code=400, detail="Shop is closed, cannot book appointment.")
@@ -454,7 +458,11 @@ def book_appointment(
 
     # ✅ Determine booking time (Earliest or Custom)
     if prefer_earliest or not time:
+        print(f"======prefer_earliest:{prefer_earliest}")
         booking_time = get_next_available_time(db, worker_id, date, shop_open_time)  # ✅ Already a `datetime.time` object
+        if date == today.isoformat():
+            current_ist = datetime.now(IST).time()  # ✅ Get current time in IST
+            booking_time = max(booking_time, current_ist)
     else:
         booking_time = datetime.strptime(time, "%H:%M").time()  # Convert string to `datetime.time`
 
@@ -462,6 +470,7 @@ def book_appointment(
     if booking_time < shop_open_time or booking_time > shop_close_time:
         raise HTTPException(status_code=400, detail="Appointment time must be within shop hours.")
 
+    print(f"booking_time=====:{booking_time}")
     if date == today.isoformat() and booking_time < current_time_ist:
         raise HTTPException(status_code=400, detail="Cannot book a past time.")
 
@@ -535,94 +544,97 @@ def book_appointment(
             [{"appointment_id": appointment.id, "service_id": service_id} for service_id in selected_service_ids]
         )
         db.commit()
-
+    send_email(appointment,"Booking")
     # return {"message": "Appointment booked successfully", "appointment_time": booking_time.strftime("%H:%M")}
     return RedirectResponse(url=f"/shops/{shop_id}", status_code=303)
 
 
-@router.get("/{shop_id}/available_time")
-def get_available_time_slots(shop_id: int, worker_id: int, date: str, db: Session = Depends(get_db)):
-    """Finds the available time slots for a worker on a given date."""
+# @router.get("/{shop_id}/available_time")
+# def get_available_time_slots(shop_id: int, worker_id: int, date: str, db: Session = Depends(get_db)):
+#     """Finds the available time slots for a worker on a given date."""
     
-    # Convert date string to date object
-    date = datetime.strptime(date, "%Y-%m-%d").date()
+#     # Convert date string to date object
+#     date = datetime.strptime(date, "%Y-%m-%d").date()
 
-    # Fetch shop details
-    shop = db.query(Shop).filter(Shop.id == shop_id).first()
-    if not shop:
-        return {"error": "Shop not found."}
+#     # Fetch shop details
+#     shop = db.query(Shop).filter(Shop.id == shop_id).first()
+#     if not shop:
+#         return {"error": "Shop not found."}
 
-    # Convert shop opening and closing times
-    shop_open_time = datetime.combine(date, datetime.strptime(shop.open_time, "%H:%M").time())
-    shop_close_time = datetime.combine(date, datetime.strptime(shop.close_time, "%H:%M").time())
+#     # Convert shop opening and closing times
+#     shop_open_time = datetime.combine(date, datetime.strptime(shop.open_time, "%H:%M").time())
+#     shop_close_time = datetime.combine(date, datetime.strptime(shop.close_time, "%H:%M").time())
 
-    # Fetch all existing appointments for the worker
-    appointments = (
-        db.query(Appointment)
-        .filter(Appointment.worker_id == worker_id, Appointment.date == date)
-        .order_by(Appointment.time.asc())
-        .all()
-    )
+#     # Fetch all existing appointments for the worker
+#     appointments = (
+#         db.query(Appointment)
+#         .filter(Appointment.worker_id == worker_id, Appointment.date == date)
+#         .order_by(Appointment.time.asc())
+#         .all()
+#     )
 
-    # Get current time in IST
-    current_ist = datetime.now(IST).time()
+#     # Get current time in IST
+#     current_ist = datetime.now(IST).time()
     
-    # Ensure available time starts correctly
-    available_time = max(shop_open_time, datetime.combine(date, current_ist)) if date == datetime.now(IST).date() else shop_open_time
+#     # Ensure available time starts correctly
+#     available_time = max(shop_open_time, datetime.combine(date, current_ist)) if date == datetime.now(IST).date() else shop_open_time
 
-    available_slots = []
+#     available_slots = []
     
-    for appointment in appointments:
-        start_time = datetime.strptime(appointment.time, "%H:%M").time()
-        start_datetime = datetime.combine(date, start_time)
-
-        # Get appointment duration
-        appointment_duration = (
-            db.query(func.sum(Service.duration_minutes))
-            .join(appointment_services)
-            .filter(appointment_services.c.appointment_id == appointment.id)
-            .scalar()
-        ) or 0
-
-        end_datetime = start_datetime + timedelta(minutes=appointment_duration)
-
+#     for appointment in appointments:
+#         start_time = datetime.strptime(appointment.time, "%H:%M").time()
+#         start_datetime = datetime.combine(date, start_time)
         
-        # If there's a gap before this appointment, add it to available slots
-        if available_time < start_datetime:
-            available_slots.append([
-                available_time.strftime("%H:%M"),
-                start_datetime.strftime("%H:%M")
-            ])
+#         # Get appointment duration
+#         appointment_duration = (
+#             db.query(func.sum(Service.duration_minutes))
+#             .join(appointment_services)
+#             .filter(appointment_services.c.appointment_id == appointment.id)
+#             .scalar()
+#         ) or 0
 
-        # Move available time to after this appointment
-        available_time = end_datetime
+#         end_datetime = start_datetime + timedelta(minutes=appointment_duration)
 
-    current_ist_date = datetime.now(IST).date()
-    # If there's free time after the last appointment, add it
-    if available_time < shop_close_time:
-        if date == current_ist_date:
-            if (current_ist.strftime("%H:%M") < shop_close_time.strftime("%H:%M")) and (current_ist.strftime("%H:%M") > available_time.strftime("%H:%M")):
-                available_slots.append([
-                    current_ist.strftime("%H:%M"),
-                    shop_close_time.strftime("%H:%M")
-                ])
-            else:
-                available_slots.append([
-                available_time.strftime("%H:%M"),
-                shop_close_time.strftime("%H:%M")
-            ])
-        else:
-            available_slots.append([
-                available_time.strftime("%H:%M"),
-                shop_close_time.strftime("%H:%M")
-            ])
+#         current_ist_date = datetime.now(IST).date()
+#         # If there's a gap before this appointment, add it to available slots
+#         if available_time < start_datetime:
+#             if date == current_ist_date:
+#                 if current_ist.strftime("%H:%M") < available_time.strftime("%H:%M"):
+#                     available_slots.append([
+#                     current_ist.strftime("%H:%M"),
+#                     start_datetime.strftime("%H:%M")
+#                 ])
+#             else:    
+#                 available_slots.append([
+#                     available_time.strftime("%H:%M"),
+#                     start_datetime.strftime("%H:%M")
+#                 ])
 
-        # available_slots.append([
-        #         available_time.strftime("%H:%M"),
-        #         shop_close_time.strftime("%H:%M")
-        #     ])
+#         # Move available time to after this appointment
+#         available_time = end_datetime
 
-    return {"available_slots": available_slots}
+#     print(f"====available_slots=3===:{available_slots}")
+#     # If there's free time after the last appointment, add it
+#     if available_time < shop_close_time:
+#         if date == current_ist_date:
+#             if (current_ist.strftime("%H:%M") < shop_close_time.strftime("%H:%M")) and (current_ist.strftime("%H:%M") > available_time.strftime("%H:%M")):
+#                 available_slots.append([
+#                     current_ist.strftime("%H:%M"),
+#                     shop_close_time.strftime("%H:%M")
+#                 ])
+#             else:
+#                 available_slots.append([
+#                 available_time.strftime("%H:%M"),
+#                 shop_close_time.strftime("%H:%M")
+#             ])
+#         else:
+#             available_slots.append([
+#                 available_time.strftime("%H:%M"),
+#                 shop_close_time.strftime("%H:%M")
+#             ])
+
+#     print(f"====available_slots=4===:{available_slots}")
+#     return {"available_slots": available_slots}
 
 
 
@@ -651,3 +663,111 @@ def update_appointment_status(request: Request,
         db.refresh(appointment)
 
     return {"message": "Appointment marked as Done"}
+
+
+
+
+@router.put("/appointments/{appointment_id}/notification")
+def SendNotification(request: Request,
+    appointment_id: int,
+    db: Session = Depends(get_db),
+    owner=Depends(get_current_user)
+):
+    """Allows shop owners to mark an appointment as 'Done'."""
+    
+    # Fetch appointment
+    appointment = db.query(Appointment).filter(Appointment.id == appointment_id).first()
+    
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Appointment not found.")
+
+    # Check if the user is the shop owner
+    if owner["id"] != appointment.shop.user_id:
+        raise HTTPException(status_code=403, detail="Only shop owners can can send the mail.")
+
+    print(f"email is getting sent by shop:{appointment.shop.shop_name} and  email is:{owner}")
+    # Update status if it's "Queue"
+    # def send_email(to_email: str, Username: str, Shopname: str):
+    # send_email(appointment.user.email,appointment.user.username,appointment.shop.shop_name,start_time)
+    send_email(appointment,"Notification")
+
+    return {"message": "Notification sent"}
+
+
+
+@router.get("/{shop_id}/available_time")
+def get_available_time_slots(shop_id: int, worker_id: int, date: str, db: Session = Depends(get_db)):
+    """Finds the available time slots for a worker on a given date."""
+    
+    # Convert date string to date object
+    date = datetime.strptime(date, "%Y-%m-%d").date()
+
+    # Fetch shop details
+    shop = db.query(Shop).filter(Shop.id == shop_id).first()
+    if not shop:
+        return {"error": "Shop not found."}
+
+    # Convert shop opening and closing times
+    shop_open_time = datetime.combine(date, datetime.strptime(shop.open_time, "%H:%M").time())
+    shop_close_time = datetime.combine(date, datetime.strptime(shop.close_time, "%H:%M").time())
+
+    # Fetch all existing appointments for the worker
+    appointments = (
+        db.query(Appointment)
+        .filter(Appointment.worker_id == worker_id, Appointment.date == date)
+        .order_by(Appointment.time.asc())
+        .all()
+    )
+
+    # Get current time in IST
+    current_ist = datetime.now(IST).time()
+    current_ist_datetime = datetime.combine(date, current_ist)
+    
+    # Ensure available time starts correctly
+    available_time = max(shop_open_time, current_ist_datetime) if date == datetime.now(IST).date() else shop_open_time
+
+    available_slots = []
+    
+    for appointment in appointments:
+        start_time = datetime.strptime(appointment.time, "%H:%M").time()
+        start_datetime = datetime.combine(date, start_time)
+        
+        # Get appointment duration
+        appointment_duration = (
+            db.query(func.sum(Service.duration_minutes))
+            .join(appointment_services)
+            .filter(appointment_services.c.appointment_id == appointment.id)
+            .scalar()
+        ) or 0
+
+        end_datetime = start_datetime + timedelta(minutes=appointment_duration)
+
+        # If there's a gap before this appointment, add it to available slots
+        if available_time < start_datetime:
+            slot_start = available_time.strftime("%H:%M")
+            slot_end = start_datetime.strftime("%H:%M")
+            
+            # 🛠️ Fix: If the slot starts before `current_ist`, adjust it
+            if date == datetime.now(IST).date() and available_time < current_ist_datetime:
+                slot_start = current_ist.strftime("%H:%M")
+            
+            if slot_start < slot_end:  # Only add valid slots
+                available_slots.append([slot_start, slot_end])
+
+        # Move available time to after this appointment
+        available_time = end_datetime
+
+    # If there's free time after the last appointment, add it
+    if available_time < shop_close_time:
+        slot_start = available_time.strftime("%H:%M")
+        slot_end = shop_close_time.strftime("%H:%M")
+        
+        # 🛠️ Fix: If the slot starts before `current_ist`, adjust it
+        if date == datetime.now(IST).date() and available_time < current_ist_datetime:
+            slot_start = current_ist.strftime("%H:%M")
+        
+        if slot_start < slot_end:  # Only add valid slots
+            available_slots.append([slot_start, slot_end])
+
+    print(f"==== Available Slots ====: {available_slots}")
+    return {"available_slots": available_slots}
