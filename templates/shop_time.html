@@ -1,3 +1,4 @@
+{% if current_user and current_user.id == shop.user_id %}
 <form action="/shops/{{ shop.id }}/set_schedule" method="post">
     <label for="open_time">Open Time:</label>
     <input type="time" id="open_time" name="open_time">
@@ -13,9 +14,10 @@
 
     <button type="submit">Set Schedule</button>
 </form>
+{% endif %}
 
 
-    <!-- For list of Services -->
+    <!-- For Shop Schedule -->
     <h2>Shop Schedule</h2>
     <table style="border-collapse: collapse; width: 70%;" border="1">
         <thead>
@@ -39,3 +41,10 @@
                 {% endif %}
         </tbody>
     </table>
+
+    <!-- To Delete the shop -->
+    {% if current_user.id == shop.user_id %}
+        <form action="/shops/delete/{{ shop.id }}" method="post">
+            <button type="submit" class="delete-btn">Delete</button>
+        </form>            
+    {% endif %}

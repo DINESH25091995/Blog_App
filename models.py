@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Text,Table, Boolean
+from sqlalchemy import Column, Integer, String, ForeignKey, Text,Table, Boolean,DateTime,Float
 from sqlalchemy.orm import relationship
 from database import Base
+from datetime import datetime
 
 # Many-to-Many Relationship Table
 worker_services = Table(
@@ -18,11 +19,22 @@ appointment_services = Table(
     Column("service_id", ForeignKey("services.id"), primary_key=True),
 )
 
+# class User(Base):
+#     __tablename__ = "users"
+#     id = Column(Integer, primary_key=True, index=True)
+#     username = Column(String, unique=True, index=True)
+#     hashed_password = Column(String)
+
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True)
-    hashed_password = Column(String)
+    username = Column(String, index=True)
+    email = Column(String, unique=True, index=True, nullable=True)
+    mobile = Column(String, unique=True, index=True, nullable=True)
+    password = Column(String, nullable=True)  # Will be hashed
+    is_verified = Column(Boolean, default=False)  # For OTP verification
+    otp = Column(String, nullable=True)  # Stores the OTP temporarily
+
 
 class Blog(Base):
     __tablename__ = "blogs"
@@ -55,7 +67,8 @@ class Shop(Base):
     id = Column(Integer, primary_key=True, index=True)
     shop_name = Column(String)
     address = Column(String)
-    user_id = Column(Integer, ForeignKey("users.id"))
+    # user_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     # Adding open time, close time, and is_open field
     open_time = Column(String, nullable=True)  # e.g., '09:00 AM'
     close_time = Column(String, nullable=True)  # e.g., '06:00 PM'
@@ -68,7 +81,7 @@ class Shop(Base):
 class ShopImage(Base):
     __tablename__ = "shop_images"
     id = Column(Integer, primary_key=True, index=True)
-    shop_id = Column(Integer, ForeignKey("shops.id"))
+    shop_id = Column(Integer, ForeignKey("shops.id", ondelete="CASCADE"),nullable=False)
     image_path = Column(String, nullable=False)
     shop = relationship("Shop", back_populates="images")
 
@@ -76,24 +89,30 @@ class ShopImage(Base):
 class Worker(Base):
     __tablename__ = "workers"
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    shop_id = Column(Integer, ForeignKey("shops.id"))
-    
+    # user_id = Column(Integer, ForeignKey("users.id"))
+    # shop_id = Column(Integer, ForeignKey("shops.id"))
+
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    shop_id = Column(Integer, ForeignKey("shops.id", ondelete="CASCADE"), nullable=False)
+
     user = relationship("User", backref="worker_shops")
     shop = relationship("Shop", back_populates="workers")
     # Many-to-Many Relationship with Services
-    services = relationship("Service", secondary=worker_services, back_populates="workers")
+    services = relationship("Service", secondary=worker_services, back_populates="workers",cascade="all")
 
 class Service(Base):
     __tablename__ = "services"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String)
+    duration_minutes = Column(Integer, nullable=False)  # Time required for the service (in minutes)
+    price = Column(Float, nullable=False)  # Cost of the service
 
-    shop_id = Column(Integer, ForeignKey("shops.id"))
+    # shop_id = Column(Integer, ForeignKey("shops.id"))
+    shop_id = Column(Integer, ForeignKey("shops.id", ondelete="CASCADE"), nullable=False)
     shop = relationship("Shop", back_populates="services")
-    workers = relationship("Worker", secondary=worker_services, back_populates="services")
-    appointments = relationship("Appointment", secondary=appointment_services, back_populates="services")
-    
+    workers = relationship("Worker", secondary=worker_services, back_populates="services",cascade="all")
+    appointments = relationship("Appointment", secondary=appointment_services, back_populates="services",cascade="all")
+
 
 class Appointment(Base):
     __tablename__ = "appointments"
@@ -103,6 +122,11 @@ class Appointment(Base):
     shop_id = Column(Integer, ForeignKey("shops.id"))
     date = Column(String)
     time = Column(String)
+    created_at = Column(DateTime, default=datetime.utcnow)  # ✅ Automatically set booking time
+    total_price = Column(Float, nullable=False)  # ✅ Total payment amount
+    payment_status = Column(String, default="Cash")  # Can be "Pending" or "Paid"
+    status = Column(String, default="Queue",nullable=True)
+    # status = Column(Boolean, default=False)
 
     user = relationship("User", backref="appointments")
     worker = relationship("Worker", backref="appointments")

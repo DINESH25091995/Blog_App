@@ -1,21 +1,25 @@
 {% extends "base.html" %}
 {% block content %}
 
-<!-- Load CSS -->
 <link rel="stylesheet" href="{{ url_for('static', path='css/login.css') }}">
-
-<ul>
-    <h1>Register</h1>
-    <form method="post" action="/auth/register">
-        <div style="margin-bottom: 10px;">
+    <div class="container">
+        <h2>Register</h2>
+        <form action="/auth/register" method="post">
             <label>Username:</label>
-            <input type="text" name="username">
-        </div>
-        <div style="margin-bottom: 10px;">
+            <input type="text" name="username" placeholder="Enter your username" required>
+            
+            <label>Email:</label>
+            <input type="email" name="email" placeholder="Enter your email" required>
+            
+            <label>Mobile (optional):</label>
+            <input type="text" name="mobile" placeholder="Enter your mobile number">
+            
             <label>Password:</label>
-            <input type="password" name="password">
-        </div>
-        <button type="submit" class="login-btn">Register</button>
-    </form>
-</ul>
+            <input type="password" name="password" placeholder="Enter your password" required>
+            
+            <button type="submit">Register</button>
+        </form>
+    </div>
+
+    
 {% endblock %}

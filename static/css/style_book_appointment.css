@@ -1,0 +1,103 @@
+/* ✅ Mobile-Friendly Styling */
+body {
+    font-family: Arial, sans-serif;
+    padding: 10px;
+}
+
+form {
+    max-width: 400px;  /* ✅ Limit form width for compact UI */
+    margin: auto;
+    background: #f8f8f8;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* ✅ Make labels & inputs more compact */
+label {
+    font-weight: bold;
+    margin-top: 10px;
+    display: block;
+}
+
+select, input {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+/* ✅ Services List: Scrollable and Compact */
+#services-list {
+    max-height: 150px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    padding: 5px;
+    border-radius: 5px;
+    background: #fff;
+}
+
+/* ✅ Checkbox Alignment Fix */
+.worker-services label {
+    display: flex;
+    align-items: center;
+    gap: 8px;  /* ✅ Adds a small gap between checkbox and text */
+    padding: 5px 0;
+}
+
+/* ✅ Adjust Checkbox Size */
+.worker-services input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+}
+
+/* ✅ Cart Section: Scrollable */
+#cart {
+    background: #fff;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+#cart ul {
+    list-style: none;
+    padding: 0;
+}
+
+#cart ul li {
+    font-size: 14px;
+    padding: 5px 0;
+    border-bottom: 1px solid #eee;
+}
+
+/* ✅ Responsive Buttons */
+button {
+    background: #007bff;
+    color: white;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    width: 100%;
+    margin-top: 10px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #0056b3;
+}
+
+/* ✅ Media Query for Small Screens */
+@media (max-width: 480px) {
+    form {
+        padding: 10px;
+    }
+    select, input {
+        padding: 6px;
+    }
+    button {
+        padding: 8px;
+    }
+}

@@ -1,3 +1,71 @@
+
+
+        /* ✅ Responsive Form Container */
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 400px;
+            place-items: center;
+        }
+
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+
+        /* ✅ Form Styling */
+        label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        /* ✅ Responsive Button */
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #007bff;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        /* ✅ Responsive Design */
+        @media (max-width: 480px) {
+            .container {
+                padding: 15px;
+            }
+
+            input {
+                padding: 8px;
+                font-size: 14px;
+            }
+
+            button {
+                padding: 10px;
+                font-size: 16px;
+            }
+        }
+
 /* CSS for Login Button */
 /* CSS for Register Button as well */
 .login-btn {
@@ -8,7 +76,7 @@
     border-radius: 5px;
     cursor: pointer;
     font-size: 16px;
-    width: 8%;
+    width: 68%;
 }
 
 .login-btn:hover {
@@ -16,18 +84,18 @@
 }
 
 /* Style the labels */
-.input-label {
-    color: #007bff; /* Blue color */
+/* .input-label {
+    color: #007bff; 
     font-weight: bold;
-    display: block; /* Place labels above input */
+    display: block; 
     margin-bottom: 5px;
-}
+} */
 
 /* Style the input fields */
-input {
+/* input {
     width: 15%;
     padding: 8px;
     margin-bottom: 10px;
     border: 1px solid #ccc;
     border-radius: 5px;
-}
+} */
